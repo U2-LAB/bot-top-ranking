@@ -15,18 +15,27 @@ ADMINS_ID = [359862454]
 VOTED_USERS = []
 TIME_FOR_VOTE = 10 # in seconds
 
+ZERO = '\U00000030\U000020E3'
+ONE = '\U00000031\U000020E3'
+TWO = '\U00000032\U000020E3'
+THREE = '\U00000033\U000020E3'
+FOUR = '\U00000034\U000020E3'
+FIVE = '\U00000035\U000020E3'
+SIX = '\U00000036\U000020E3'
+SEVEN = '\U00000037\U000020E3'
+EIGHT = '\U00000038\U000020E3'
+NINE = '\U00000039\U000020E3'
+
+NUMBERS = [ZERO,ONE,TWO,THREE,FOUR,FIVE,SIX,SEVEN,EIGHT,NINE]
 
 def gen_markup():
 	markup = InlineKeyboardMarkup()
 	markup.row_width = COUNT_MUSIC
 
-	markup.add(
-		InlineKeyboardButton(f'1️⃣ - {MARKS[0]}',callback_data=MUSIC_POS[0]),
-		InlineKeyboardButton(f'2️⃣ - {MARKS[1]}',callback_data=MUSIC_POS[1]),
-		InlineKeyboardButton(f'3️⃣ - {MARKS[2]}',callback_data=MUSIC_POS[2]),
-		InlineKeyboardButton(f'4️⃣ - {MARKS[3]}',callback_data=MUSIC_POS[3]),
-		InlineKeyboardButton(f'5️⃣ - {MARKS[4]}',callback_data=MUSIC_POS[4]),
-	)
+	button_list = [InlineKeyboardButton(f'{NUMBERS[index+1]} - {MARKS[index]}',callback_data=MUSIC_POS[index]) for index in range(COUNT_MUSIC)]
+
+	markup.add(*button_list)
+
 	return markup
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -69,6 +78,8 @@ def pool_over():
 
 @bot.message_handler(commands=['pool'])
 def create_pool(message):
+	# ADMINS_ID = [admin.user.id for admin in bot.get_chat_administrators(message.chat.id)]
+	
 	if message.from_user.id in ADMINS_ID:
 		links, titles = get_links(COUNT_MUSIC)
 		music_pool = f"""
@@ -82,5 +93,6 @@ def create_pool(message):
 		time.sleep(TIME_FOR_VOTE)
 		receive_top_music(message.chat.id,links)
 		pool_over()
+		
 	else:
 		bot.send_message(message.chat.id, r"You don't have permission")
