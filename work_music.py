@@ -30,7 +30,7 @@ def get_links(count_music):
     return links, titles
 
 
-def download_music_link(music_link, index):
+def download_music_link(music_link, index='song'):
     link = MAIN_URL + music_link
     r = requests.get(link, stream=True)
     if r.status_code == OK_STATUS_CODE:
