@@ -4,10 +4,10 @@ import os
 import telebot
 import re
 
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, MessageEntity
 from work_music import get_links, download_music_link
 
-bot = telebot.TeleBot("1389559561:AAGbQ0mIBnptbQ4-XCvqKLlNMN-szSIhyxI", parse_mode=None)
+bot = telebot.TeleBot("1389559561:AAGbQ0mIBnptbQ4-XCvqKLlNMN-szSIhyxI")
 ZERO = '\U00000030\U000020E3'
 ONE = '\U00000031\U000020E3'
 TWO = '\U00000032\U000020E3'
@@ -169,26 +169,25 @@ def finish_poll(message):
         bot.send_message(message.chat.id, "Pool hasn't started yet. Type /poll to start")
 
 
-@bot.message_handler(commands=['top'])  # add regexp to extract number of songs
+@bot.message_handler(commands=['top'])
 def get_songs_top_list(message):
     top_list = setup.songs.copy()
     top_list.sort(key=lambda song: song.mark, reverse=True)
     music_pool = ''
     try:
         top_number = int(re.search(r'^/top ([\d]*)$', message.text).group(1))
-        assert(top_number > 0)
     except AttributeError:
         bot.send_message(message.chat.id, 'Incorrect input')
-        return
-    except AssertionError:
-        bot.send_message(message.chat.id, 'Top number cannot be negative or zero')
-        return
-    for idx, song in enumerate(top_list[:top_number]):  # 5 - regexp
-        music_pool += f'{idx + 1}. {song.title} Votes - {song.mark}\n'
-    bot.send_message(message.chat.id, music_pool)
+    else:
+        if top_number > 10 or not top_number:
+            bot.send_message(message.chat.id, 'Number should be greater than 0 and less or equal to 10')
+        else:
+            for idx, song in enumerate(top_list[:top_number]):  # 5 - regexp
+                music_pool += f'{idx + 1}. {song.title} Votes - {song.mark}\n'
+            bot.send_message(message.chat.id, music_pool)
 
 
-@bot.message_handler(commands=['poptop'])  # add regexp to extract number of songs
+@bot.message_handler(commands=['poptop'])
 def pop_element_from_top(message):
     ADMINS_ID = [admin.user.id for admin in bot.get_chat_administrators(message.chat.id)]
     if message.from_user.id in ADMINS_ID:
@@ -196,22 +195,22 @@ def pop_element_from_top(message):
     # if True:
         if setup.pool_started:
             try:
-                idx = int(re.search(r'^/poptop ([\d]*)$', message.text).group(1)) - 1  # regexp
-                assert(0 < idx + 1 < setup.count_music)
+                idx = int(re.search(r'^/poptop ([\d]*)$', message.text).group(1)) - 1
             except AttributeError:
                 bot.send_message(message.chat.id, 'Incorrect input')
-                return
-            except AssertionError:
-                bot.send_message(message.chat.id, f'Input number from 1 to {setup.count_music}')
-                return
+                return None
+            else:
+                if not idx or idx > setup.count_music:
+                    bot.send_message(message.chat.id, f'Type {setup.count_music} > number > 0')
+                    return None
             is_changed = False
             # TODO update it
             top_list = setup.songs.copy()
             top_list.sort(key=lambda song: song.mark, reverse=True)
             download_music_link(top_list[idx].link)
-            audio = open(f'{"song"}.mp3', 'rb')
+            audio = open('song.mp3', 'rb')
             bot.send_audio(message.chat.id, audio)
-            os.remove(f'{"song"}.mp3')
+            os.remove('song.mp3')
             # END
             for idx, vote in enumerate(setup.voted_users):
                 if vote[1] == top_list[idx].pos:  # vote[1] = song position
@@ -225,3 +224,16 @@ def pop_element_from_top(message):
             bot.send_message(message.chat.id, "Pool hasn't started yet. Type /poll to start")
     else:
         bot.send_message(message.chat.id, r"You don't have permission")
+
+
+
+@bot.message_handler(content_types=['text']) #
+def printer(message):
+    # print(MessageEntity.de_json(message.entities))\
+    setup.user_for_promoting = message.text.replace('@', '')
+    bot.send_message(message.chat.id, message.text)
+    if message.from_user.username == setup.user_for_promoting:
+        bot.promote_chat_member(message.chat.id, message.from_user.id, can_delete_messages=True)
+        bot.send_message(message.chat.id, message.text)
+
+
