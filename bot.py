@@ -139,17 +139,25 @@ def update_pool_message(oper=None):
 
 @bot.message_handler(commands=['poll'])
 def create_pool(message):
-    ADMINS_ID = [admin.user.id for admin in bot.get_chat_administrators(message.chat.id)]
-    if message.from_user.id in ADMINS_ID:
+    # COMMMMMEEEEEEENNNNNNTTTTTT
+    # ADMINS_ID = [admin.user.id for admin in bot.get_chat_administrators(message.chat.id)]
+    # if message.from_user.id in ADMINS_ID:
+    if True:
         if setup.pool_started:
-            bot.send_message(message.chat.id, "Previous poll ({}) hasn't finished yet. Type /finish")
+            markup = InlineKeyboardMarkup()
+            btn_poll = InlineKeyboardButton(text='poll',url='https://vk.com')
+            markup.add(btn_poll)
+            bot.send_message(message.chat.id, "Previous poll ({}) hasn't finished yet. Type /finish",reply_markup=markup)
             return None
         setup.pool_started = True
         music_pool = ''
         for idx, song in enumerate(
                 setup.songs[(setup.current_page - 1) * setup.count_rows:setup.current_page * setup.count_rows]):
             music_pool += f'{setup.current_idx + idx}. {song.title}\n'
-        bot.send_message(message.chat.id, music_pool, reply_markup=gen_markup())
+        poll = bot.send_message(message.chat.id, music_pool, reply_markup=gen_markup())
+        setup.message_id = poll.message_id
+        setup.chat_id = poll.chat.id
+        bot.pin_chat_message(setup.chat_id, setup.message_id)
     else:
         bot.send_message(message.chat.id, r"You don't have permission")
 
@@ -158,6 +166,7 @@ def create_pool(message):
 def finish_poll(message):
     if setup.pool_started:
         receive_top_music(message.chat.id)
+        bot.unpin_chat_message(setup.chat_id)
         setup.make_default_setup()
     else:
         bot.send_message(message.chat.id, "Pool hasn't started yet. Type /poll to start")
@@ -175,8 +184,10 @@ def get_songs_top_list(message):
 
 @bot.message_handler(commands=['poptop'])  # add regexp to extract number of songs
 def pop_element_from_top(message):
-    ADMINS_ID = [admin.user.id for admin in bot.get_chat_administrators(message.chat.id)]
-    if message.from_user.id in ADMINS_ID:
+    # ADMINS_ID = [admin.user.id for admin in bot.get_chat_administrators(message.chat.id)]
+    # if message.from_user.id in ADMINS_ID:
+    # COMMMMMEEEEEEENNNNNNTTTTTT
+    if True:
         if setup.pool_started:
             idx = 0  # regexp
             is_changed = False
