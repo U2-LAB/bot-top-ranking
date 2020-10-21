@@ -1,10 +1,10 @@
 import collections
 import math
 import os
-
 import telebot
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+import re
 
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from work_music import get_links, download_music_link
 
 bot = telebot.TeleBot("1389559561:AAGbQ0mIBnptbQ4-XCvqKLlNMN-szSIhyxI", parse_mode=None)
@@ -140,14 +140,11 @@ def update_pool_message(oper=None):
 @bot.message_handler(commands=['poll'])
 def create_pool(message):
     # COMMMMMEEEEEEENNNNNNTTTTTT
-    # ADMINS_ID = [admin.user.id for admin in bot.get_chat_administrators(message.chat.id)]
-    # if message.from_user.id in ADMINS_ID:
-    if True:
+    ADMINS_ID = [admin.user.id for admin in bot.get_chat_administrators(message.chat.id)]
+    if message.from_user.id in ADMINS_ID:
+    # if True:
         if setup.pool_started:
-            markup = InlineKeyboardMarkup()
-            btn_poll = InlineKeyboardButton(text='poll',url='https://vk.com')
-            markup.add(btn_poll)
-            bot.send_message(message.chat.id, "Previous poll ({}) hasn't finished yet. Type /finish",reply_markup=markup)
+            bot.send_message(message.chat.id, "Previous poll hasn't finished yet. Type /finish or use pinedMessage")
             return None
         setup.pool_started = True
         music_pool = ''
@@ -157,7 +154,7 @@ def create_pool(message):
         poll = bot.send_message(message.chat.id, music_pool, reply_markup=gen_markup())
         setup.message_id = poll.message_id
         setup.chat_id = poll.chat.id
-        bot.pin_chat_message(setup.chat_id, setup.message_id)
+        bot.pin_chat_message(setup.chat_id, setup.message_id, disable_notification=True)
     else:
         bot.send_message(message.chat.id, r"You don't have permission")
 
@@ -177,19 +174,36 @@ def get_songs_top_list(message):
     top_list = setup.songs.copy()
     top_list.sort(key=lambda song: song.mark, reverse=True)
     music_pool = ''
-    for idx, song in enumerate(top_list[:5]):  # 5 - regexp
+    try:
+        top_number = int(re.search(r'^/top ([\d]*)$', message.text).group(1))
+        assert(top_number > 0)
+    except AttributeError:
+        bot.send_message(message.chat.id, 'Incorrect input')
+        return
+    except AssertionError:
+        bot.send_message(message.chat.id, 'Top number cannot be negative or zero')
+        return
+    for idx, song in enumerate(top_list[:top_number]):  # 5 - regexp
         music_pool += f'{idx + 1}. {song.title} Votes - {song.mark}\n'
     bot.send_message(message.chat.id, music_pool)
 
 
 @bot.message_handler(commands=['poptop'])  # add regexp to extract number of songs
 def pop_element_from_top(message):
-    # ADMINS_ID = [admin.user.id for admin in bot.get_chat_administrators(message.chat.id)]
-    # if message.from_user.id in ADMINS_ID:
+    ADMINS_ID = [admin.user.id for admin in bot.get_chat_administrators(message.chat.id)]
+    if message.from_user.id in ADMINS_ID:
     # COMMMMMEEEEEEENNNNNNTTTTTT
-    if True:
+    # if True:
         if setup.pool_started:
-            idx = 0  # regexp
+            try:
+                idx = int(re.search(r'^/poptop ([\d]*)$', message.text).group(1)) - 1  # regexp
+                assert(0 < idx + 1 < setup.count_music)
+            except AttributeError:
+                bot.send_message(message.chat.id, 'Incorrect input')
+                return
+            except AssertionError:
+                bot.send_message(message.chat.id, f'Input number from 1 to {setup.count_music}')
+                return
             is_changed = False
             # TODO update it
             top_list = setup.songs.copy()

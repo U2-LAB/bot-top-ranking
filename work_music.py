@@ -4,7 +4,8 @@ from bs4 import BeautifulSoup as BS
 from progress.bar import Bar
 import random
 
-CHARTS_URL = r'https://megapesni.com/online/'
+# CHARTS_URL = r'https://megapesni.com/online/'
+CHARTS_URL = r'https://megapesni.com/rock_chart.html'
 MAIN_URL = r'https://megapesni.com'
 OK_STATUS_CODE = 200
 
