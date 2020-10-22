@@ -31,9 +31,9 @@ def get_links(count_music):
     return links, titles
 
 
-def download_music_link(music_link, index='song'):
+def download_music_link(music_link):
     link = MAIN_URL + music_link
-    r = requests.get(link, stream=True)
-    if r.status_code == OK_STATUS_CODE:
-        with open(f'{index}.mp3', 'wb') as mp3:
-            mp3.write(r.content)
+    req = requests.get(link, stream=True)
+    if req.status_code == OK_STATUS_CODE:
+        with open('song.mp3', 'wb') as mp3:
+            mp3.write(req.content)
