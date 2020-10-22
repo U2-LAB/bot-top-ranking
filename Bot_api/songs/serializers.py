@@ -5,7 +5,7 @@ from rest_framework import serializers
 class SongSerializer(serializers.ModelSerializer):
     class Meta:
         model = Song
-        fields = ['id', 'title', 'mark', 'poll_id']
+        fields = ['id', 'poll_id', 'title', 'mark', ]
 
 
 class PollSerializer(serializers.ModelSerializer):
@@ -13,7 +13,7 @@ class PollSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Poll
-        fields = ['poll_id', 'songs', 'chat_id']
+        fields = ['id','poll_telegram_id', 'chat_id', 'songs', ]
 
 
 class ChatSerializer(serializers.ModelSerializer):
@@ -21,4 +21,4 @@ class ChatSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Chat
-        fields = ['chat_id', 'polls']
+        fields = ['id','telegram_chat_id', 'polls']

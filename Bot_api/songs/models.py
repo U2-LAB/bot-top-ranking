@@ -2,18 +2,18 @@ from django.db import models
 
 
 class Chat(models.Model):
-    chat_id = models.IntegerField()
+    telegram_chat_id = models.IntegerField()
 
     def __str__(self):
-        return '%d' % (self.chat_id)
+        return 'Chat #%d' % (self.telegram_chat_id)
 
 
 class Poll(models.Model):
-    poll_id = models.IntegerField()
+    poll_telegram_id = models.IntegerField()
     chat_id = models.ForeignKey('Chat', related_name='polls', null=True, on_delete=models.CASCADE)
 
     def __str__(self):
-        return '%d : %s' % (self.poll_id, self.chat_id)
+        return '%d : %s' % (self.poll_telegram_id, self.chat_id)
 
 
 class Song(models.Model):
