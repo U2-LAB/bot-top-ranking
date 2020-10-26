@@ -30,8 +30,8 @@ class Setup:
 
     def make_default_setup(self):
         self.users_for_promoting = []
-        self.count_music = 6
-        self.count_rows = 3
+        self.count_music = 12
+        self.count_rows = 4
         self.current_page = 1
         links, titles = get_links(self.count_music)
         self.songs = [Song(link=links[idx], title=titles[idx], mark=0, pos=str(idx)) for idx in range(self.count_music)]
@@ -185,7 +185,7 @@ def pop_element_from_top(message):
                 bot.send_message(setup.chat_id, 'Incorrect input')
                 return None
             else:
-                if not idx or idx > setup.count_music:
+                if idx < 0 or idx > setup.count_music:
                     bot.send_message(setup.chat_id, f'Type {setup.count_music} > number > 0')
                     return None
             is_changed = False
