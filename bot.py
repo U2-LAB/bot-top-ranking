@@ -3,75 +3,42 @@ import math
 import os
 import telebot
 import re
+import json
 
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, MessageEntity
-from work_music import get_links, download_music_link
+from work_music import get_links, download_music_link, get_music_csv
 
 bot = telebot.TeleBot("1389559561:AAGbQ0mIBnptbQ4-XCvqKLlNMN-szSIhyxI")
-ZERO = '\U00000030\U000020E3'
-ONE = '\U00000031\U000020E3'
-TWO = '\U00000032\U000020E3'
-THREE = '\U00000033\U000020E3'
-FOUR = '\U00000034\U000020E3'
-FIVE = '\U00000035\U000020E3'
-SIX = '\U00000036\U000020E3'
-SEVEN = '\U00000037\U000020E3'
-EIGHT = '\U00000038\U000020E3'
-NINE = '\U00000039\U000020E3'
-
-NUMBERS = [ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE]
 
 Song = collections.namedtuple('Song', ['link', 'title', 'mark', 'pos'])
 
 
 class Setup:
     def __init__(self):
-        self.make_default_setup()
+        self.config = {}
+        self.loads_config()
+        self.get_songs()
 
-    def make_default_setup(self):
-        self.users_for_promoting = []
-        self.count_music = 12
-        self.count_rows = 4
-        self.current_page = 1
-        links, titles = get_links(self.count_music)
-        self.songs = [Song(link=links[idx], title=titles[idx], mark=0, pos=str(idx)) for idx in range(self.count_music)]
-        self.voted_users = []
-        self.current_idx = 1
+    def loads_config(self):
+        with open("config.json") as r_file:
+            self.config = json.load(r_file)
+        self.users_for_promoting = self.config['usersForPromoting']
+        self.count_music = self.config['countMusic']
+        self.count_rows = self.config['countRows']
+        self.current_page = self.config['currentPage']
+        self.songs = self.config['songs']
+        self.voted_users = self.config['votedUsers']
+        self.current_idx = self.config['currentIdx']
         self.max_page = math.ceil(self.count_music / self.count_rows)
-        self.pool_started = False
-        self.message_id = None
-        self.pool_id = None
-        self.chat_id = None
+        self.poll_started = self.config['pollStarted']
+        self.message_id = self.config['messageId']
+        self.poll_id = self.config['pollId']
+        self.chat_id = self.config['chatId']
+
+    def get_songs(self):
+        self.songs = get_music_csv("songs.csv")
 
 
 setup = Setup()
-
-
-def get_emoji_number(number):
-    return ''.join((list(map(lambda digit: NUMBERS[int(digit)], str(number)))))
-
-
-def gen_markup():
-    markup = InlineKeyboardMarkup(row_width=setup.count_rows)
-    temp = setup.count_rows
-    if setup.current_idx + setup.count_rows > setup.count_music:
-        temp = setup.count_music - setup.current_idx + 1
-    button_list = [
-        InlineKeyboardButton(
-            f'{get_emoji_number(setup.current_idx + idx)} - {setup.songs[setup.current_idx + idx - 1].mark}',
-            callback_data=setup.songs[setup.current_idx + idx - 1].pos) for
-        idx in range(temp)]
-    markup.add(*button_list)
-    if setup.current_page > 1 and setup.current_page < setup.max_page:
-        markup.add(
-            InlineKeyboardButton(f'prev page', callback_data='Prev page'),
-            InlineKeyboardButton(f'next page', callback_data='Next page')
-        )
-    elif setup.current_page < setup.max_page:
-        markup.add(InlineKeyboardButton(f'next page', callback_data='Next page'))
-    else:
-        markup.add(InlineKeyboardButton(f'prev page', callback_data='Prev page'))
-    return markup
 
 
 def check_admin_permissions(message):
@@ -79,86 +46,79 @@ def check_admin_permissions(message):
     return message.from_user.id in admins_id
 
 
-def update_pool_message(operation=None):
-    music_pool = ''
-    if operation == 'sub':
-        setup.current_idx -= setup.count_rows
-    elif operation == 'add':
-        setup.current_idx += setup.count_rows
-    for idx, song in enumerate(
-            setup.songs[(setup.current_page - 1) * setup.count_rows: setup.current_page * setup.count_rows]):
-        music_pool += f'{setup.current_idx + idx}. {song.title}\n'
-    bot.edit_message_text(music_pool, setup.chat_id, setup.pool_id, reply_markup=gen_markup())
+def update_poll_message():
+    music_poll = ''
+    for idx, song in enumerate(setup.songs):
+        music_poll += f'{idx}. {song["title"]}\n'
+    bot.edit_message_text(music_poll, setup.chat_id, setup.poll_id)
 
 
-@bot.callback_query_handler(func=lambda call: True)
-def get_callback_query(call):
-    if not setup.pool_id:
-        setup.pool_id = call.message.message_id
-    if call.data == 'Next page':
-        setup.current_page += 1
-        update_pool_message(operation='add')
-    elif call.data == 'Prev page':
-        setup.current_page -= 1
-        update_pool_message(operation='sub')
-    elif (call.from_user.id, call.data) not in setup.voted_users:
-        pos = int(call.data)
-        song_item = setup.songs[pos]
-        setup.songs[pos] = song_item._replace(mark=song_item.mark + 1)
-        setup.voted_users.append((call.from_user.id, call.data))
+@bot.message_handler(commands=['vote'])
+def vote_for_song(message):
+    if setup.poll_started:
+        try:
+            idx = int(re.search(r'^/vote ([\d]*)$', message.text).group(1)) - 1
+        except AttributeError:
+            bot.send_message(setup.chat_id, '/help@DrakeChronoSilviumBot')
+        else:
+            if idx > setup.count_music:
+                bot.send_message(setup.chat_id, f'Type {setup.count_music} > number > 0')
+            elif (message.from_user.id, str(idx)) not in setup.voted_users:
+                song_item = setup.songs[idx]
+                setup.songs[idx] = song_item._replace(mark=song_item.mark + 1)
+                setup.voted_users.append((message.from_user.id, str(idx)))
+            else:
+                song_item = setup.songs[idx]
+                setup.songs[idx] = song_item._replace(mark=song_item.mark - 1)
+                setup.voted_users.pop(setup.voted_users.index((message.from_user.id, str(idx))))
     else:
-        pos = int(call.data)
-        song_item = setup.songs[pos]
-        setup.songs[pos] = song_item._replace(mark=song_item.mark - 1)
-        setup.voted_users.pop(setup.voted_users.index((call.from_user.id, call.data)))
-    bot.answer_callback_query(call.id, f"Answer is {call.data}")
-    if not call.data.endswith('page'):
-        bot.edit_message_reply_markup(setup.chat_id, call.message.message_id, reply_markup=gen_markup())
-
-
-@bot.message_handler(commands=['start'])
-def get_start(message):
-    bot.send_message(message.chat.id, r"Use /poll for starting poll of music")
+        bot.send_message(message.chat.id, "poll hasn't started yet. Type /disco to start")
 
 
 @bot.message_handler(commands=['help'])
 def get_help(message):
-    bot.send_message(message.chat.id, r"Use /poll for starting poll of music")
+    help_message = (
+            "/disco to start poll (Admin only)\n"
+            "/finish to end poll (Admin only)\n"
+            "/top [num] output top songs(e.g. /top or top 5) \n"
+            "/vote [num] vote for song from poll (e.g. /vote or /vote 5) \n"
+            "/setDJ [mentioned user] (e.g. /setDJ @Admin) (Admin only)\n"
+    )
+    bot.send_message(message.chat.id, help_message)
 
 
-@bot.message_handler(commands=['poll'])
-def create_pool(message):
+@bot.message_handler(commands=['disco'])
+def create_poll(message):
     if check_admin_permissions(message):
-        if setup.pool_started:
-            bot.send_message(message.chat.id, "Previous poll hasn't finished yet. Type /finish or use pinedMessage")
-            return None
-        setup.pool_started = True
-        music_pool = ''
-        for idx, song in enumerate(
-                setup.songs[(setup.current_page - 1) * setup.count_rows:setup.current_page * setup.count_rows]):
-            music_pool += f'{setup.current_idx + idx}. {song.title}\n'
-        poll = bot.send_message(message.chat.id, music_pool, reply_markup=gen_markup())
-        setup.message_id = poll.message_id
-        setup.chat_id = poll.chat.id
-        bot.pin_chat_message(setup.chat_id, setup.message_id, disable_notification=True)
+        if setup.poll_started:
+            bot.send_message(message.chat.id, "Previous poll hasn't finished yet. Type /finish or use pined Message")
+        else:
+            setup.poll_started = True
+            music_poll = ''
+            for idx, song in enumerate(setup.songs):
+                music_poll += f'{setup.current_idx + idx}. {song["title"]}\n'
+            poll = bot.send_message(message.chat.id, music_poll)
+            setup.message_id = poll.message_id
+            setup.chat_id = poll.chat.id
+            bot.pin_chat_message(setup.chat_id, setup.message_id, disable_notification=True)
     else:
         bot.send_message(message.chat.id, r"You don't have permission")
 
 
 @bot.message_handler(commands=['finish'])  # Unnecessary command
 def finish_poll(message):
-    if setup.pool_started:
+    if setup.poll_started:
         bot.unpin_chat_message(setup.chat_id)
         setup.make_default_setup()
     else:
-        bot.send_message(setup.chat_id, "Pool hasn't started yet. Type /poll to start")
+        bot.send_message(setup.chat_id, "poll hasn't started yet. Type /poll to start")
 
 
 @bot.message_handler(commands=['top'])
 def get_songs_top_list(message):
     top_list = setup.songs.copy()
-    top_list.sort(key=lambda song: song.mark, reverse=True)
-    music_pool = ''
+    top_list.sort(key=lambda song: song["mark"], reverse=True)
+    music_poll = ''
     try:
         top_number = int(re.search(r'^/top ([\d]*)$', message.text).group(1))
     except AttributeError:
@@ -168,16 +128,16 @@ def get_songs_top_list(message):
             bot.send_message(message.chat.id, 'Number should be greater than 0 and less or equal to 10')
         else:
             for idx, song in enumerate(top_list[:top_number]):  # 5 - regexp
-                music_pool += f'{idx + 1}. {song.title} Votes - {song.mark}\n'
-            bot.send_message(message.chat.id, music_pool)
+                music_poll += f'{idx + 1}. {song["title"]} Votes - {song["mark"]}\n'
+            bot.send_message(message.chat.id, music_poll)
 
 
 @bot.message_handler(commands=['poptop'])
 def pop_element_from_top(message):
     if check_admin_permissions(message):
-        if setup.pool_started:
+        if setup.poll_started:
             try:
-                if message.text == 'poptop':
+                if message.text == '/poptop@DrakeChronoSilviumBot':  # оставить /poptop
                     idx = 0
                 else:
                     idx = int(re.search(r'^/poptop ([\d]*)$', message.text).group(1)) - 1
@@ -190,7 +150,7 @@ def pop_element_from_top(message):
                     return None
             is_changed = False
             top_list = setup.songs.copy()
-            top_list.sort(key=lambda song: song.mark, reverse=True)
+            top_list.sort(key=lambda song: song["mark"], reverse=True)
             download_music_link(top_list[idx].link)
             audio = open('song.mp3', 'rb')
             bot.send_audio(message.chat.id, audio)
@@ -205,9 +165,9 @@ def pop_element_from_top(message):
             if is_changed:
                 for index in vote_remove_index_list:
                     setup.voted_users.pop(index)
-                bot.edit_message_reply_markup(setup.chat_id, setup.pool_id, reply_markup=gen_markup())
+                bot.edit_message_reply_markup(setup.chat_id, setup.poll_id, reply_markup=gen_markup())
         else:
-            bot.send_message(message.chat.id, "Pool hasn't started yet. Type /poll to start")
+            bot.send_message(message.chat.id, "poll hasn't started yet. Type /poll to start")
     else:
         bot.send_message(message.chat.id, r"You don't have permission")
 
@@ -215,9 +175,13 @@ def pop_element_from_top(message):
 @bot.message_handler(commands=['setDJ'])
 def set_dj_by_user_id(message):
     if check_admin_permissions(message):
-        mentioned_user = re.search(r'^/setDJ @([\w]*)', message.text).group(1)
-        setup.users_for_promoting.append(mentioned_user)
-        bot.send_message(message.chat.id, f'@{mentioned_user} type /becomeDJ. It\'s privileges only for you ^_^')
+        try:
+            mentioned_user = re.search(r'^/setDJ @([\w]*)', message.text).group(1)
+        except AttributeError:
+            bot.send_message(message.chat.id, '/help@DrakeChronoSilviumBot') # Оставить /help
+        else:
+            setup.users_for_promoting.append(mentioned_user)
+            bot.send_message(message.chat.id, f'@{mentioned_user} type /becomeDJ. It\'s privileges only for you ^_^')
 
 
 @bot.message_handler(commands=['becomeDJ'])
@@ -233,10 +197,5 @@ def become_dj(message):
         bot.send_message(message.chat.id, 'You are admin. Why do you try to do it??? (╮°-°)╮┳━━┳ ( ╯°□°)╯ ┻━━┻')
 
 
-
-
-
-
-
-
-
+if __name__ == "__main__":
+    bot.polling(none_stop=True)
