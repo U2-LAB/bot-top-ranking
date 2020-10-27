@@ -3,11 +3,7 @@
     "messageId": 895492,
     "pollId" : 2,
     "countMusic": 6,
-    "votedUsers": [
-        {
-            "userId": 12345
-        }
-    ],
+    "votedUsers": [],
     "usersForPromoting": [],
     "countRows": 3,
     "currentPage" : 1,

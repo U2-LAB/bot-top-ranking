@@ -38,8 +38,6 @@ class Setup:
         self.count_music = self.config['countMusic']
         self.count_rows = self.config['countRows']
         self.current_page = self.config['currentPage']
-        # links, titles = get_links(self.count_music)
-        # self.songs = [Song(link=links[idx], title=titles[idx], mark=0, pos=str(idx)) for idx in range(self.count_music)]
         self.songs = self.config['songs']
         self.voted_users = self.config['votedUsers']
         self.current_idx = self.config['currentIdx']
@@ -51,20 +49,7 @@ class Setup:
 
     def get_songs(self):
         self.songs = get_music_csv("nikita.csv")
-    # def make_default_setup(self):
-        # self.users_for_promoting = []
-        # self.count_music = 6
-        # self.count_rows = 3
-        # self.current_page = 1
-        # links, titles = get_links(self.count_music)
-        # self.songs = [Song(link=links[idx], title=titles[idx], mark=0, pos=str(idx)) for idx in range(self.count_music)]
-        # self.voted_users = []
-        # self.current_idx = 1
-        # self.max_page = math.ceil(self.count_music / self.count_rows)
-        # self.poll_started = False
-        # self.message_id = None
-        # self.poll_id = None
-        # self.chat_id = None
+
 
     
 
@@ -83,8 +68,8 @@ def gen_markup():
         temp = setup.count_music - setup.current_idx + 1
     button_list = [
         InlineKeyboardButton(
-            f'{get_emoji_number(setup.current_idx + idx)} - {setup.songs[setup.current_idx + idx - 1].mark}',
-            callback_data=setup.songs[setup.current_idx + idx - 1].pos) for
+            f'{get_emoji_number(setup.current_idx + idx)} - {setup.songs[setup.current_idx + idx - 1]["mark"]}',
+            callback_data=setup.songs[setup.current_idx + idx - 1]["pos"]) for
         idx in range(temp)]
     markup.add(*button_list)
     if setup.current_page > 1 and setup.current_page < setup.max_page:
@@ -112,7 +97,7 @@ def update_pool_message(operation=None):
         setup.current_idx += setup.count_rows
     for idx, song in enumerate(
             setup.songs[(setup.current_page - 1) * setup.count_rows: setup.current_page * setup.count_rows]):
-        music_pool += f'{setup.current_idx + idx}. {song.title}\n'
+        music_pool += f'{setup.current_idx + idx}. {song["title"]}\n'
     bot.edit_message_text(music_pool, setup.chat_id, setup.poll_id, reply_markup=gen_markup())
 
 
@@ -159,10 +144,9 @@ def create_pool(message):
             return None
         setup.poll_started = True
         music_pool = ''
-        for idx, song in enumerate(
-                setup.songs[(setup.current_page - 1) * setup.count_rows:setup.current_page * setup.count_rows]):
-            music_pool += f'{setup.current_idx + idx}. {song.title}\n'
-        poll = bot.send_message(message.chat.id, music_pool, reply_markup=gen_markup())
+        for idx, song in enumerate(setup.songs[:setup.count_music]):
+            music_pool += f'{idx}. {song["title"]} - {song["author"]}\n'
+        poll = bot.send_message(message.chat.id, music_pool)
         setup.message_id = poll.message_id
         setup.chat_id = poll.chat.id
         bot.pin_chat_message(setup.chat_id, setup.message_id, disable_notification=True)
@@ -182,7 +166,7 @@ def finish_poll(message):
 @bot.message_handler(commands=['top'])
 def get_songs_top_list(message):
     top_list = setup.songs.copy()
-    top_list.sort(key=lambda song: song.mark, reverse=True)
+    top_list.sort(key=lambda song: song["mark"], reverse=True)
     music_pool = ''
     try:
         top_number = int(re.search(r'^/top ([\d]*)$', message.text).group(1))
@@ -193,7 +177,7 @@ def get_songs_top_list(message):
             bot.send_message(message.chat.id, 'Number should be greater than 0 and less or equal to 10')
         else:
             for idx, song in enumerate(top_list[:top_number]):  # 5 - regexp
-                music_pool += f'{idx + 1}. {song.title} Votes - {song.mark}\n'
+                music_pool += f'{idx + 1}. {song["title"]} Votes - {song["mark"]}\n'
             bot.send_message(message.chat.id, music_pool)
 
 
@@ -215,7 +199,7 @@ def pop_element_from_top(message):
                     return None
             is_changed = False
             top_list = setup.songs.copy()
-            top_list.sort(key=lambda song: song.mark, reverse=True)
+            top_list.sort(key=lambda song: song["mark"], reverse=True)
             download_music_link(top_list[idx].link)
             audio = open('song.mp3', 'rb')
             bot.send_audio(message.chat.id, audio)
