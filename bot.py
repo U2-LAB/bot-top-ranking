@@ -232,11 +232,6 @@ def become_dj(message):
     elif check_admin_permissions(message):
         bot.send_message(message.chat.id, 'You are admin. Why do you try to do it??? (╮°-°)╮┳━━┳ ( ╯°□°)╯ ┻━━┻')
 
-
-
-
-
-
-
-
+def music_from_csv(path_csv : str) -> dict:
+    pass
 
