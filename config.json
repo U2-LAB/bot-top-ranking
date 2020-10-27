@@ -2,20 +2,18 @@
     "chatId" : null,
     "messageId": 895492,
     "pollId" : 2,
-    "countMusic": 6,
-    "votedUsers": [],
+    "countMusic": 25,
     "usersForPromoting": [],
-    "countRows": 3,
-    "currentPage" : 1,
+    "uploadFlag": false,
     "songs" : [
         {
             "link": "https://vk.com/mp3",
             "title": "Demons",
             "author": "Imagine dragons",
             "mark": 5,
-            "pos": 1
+            "pos": 1,
+            "votedUsers": []
         }
     ],
-    "currentIdx": 1,
     "pollStarted": false
 }
