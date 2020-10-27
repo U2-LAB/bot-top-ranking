@@ -96,3 +96,5 @@ def get_music_csv(file_name : str) -> list:
             song['pos'] = idx
             songs.append(song)
     return songs
+
+create_csv("nikita.csv")

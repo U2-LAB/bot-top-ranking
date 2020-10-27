@@ -1,5 +1,7 @@
 {
-    "chat_id" : null,
+    "chatId" : null,
+    "messageId": 895492,
+    "pollId" : 2,
     "countMusic": 6,
     "votedUsers": [
         {
@@ -19,6 +21,5 @@
         }
     ],
     "currentIdx": 1,
-    "pollStarted": true,
-    "messageId": 895492
+    "pollStarted": false
 }

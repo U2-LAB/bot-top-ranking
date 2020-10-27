@@ -1,11 +1,12 @@
 import collections
-import math
+import json
 import os
 import telebot
 import re
+import math
 
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, MessageEntity
-from work_music import get_links, download_music_link
+from work_music import get_links, download_music_link, get_music_csv
 
 bot = telebot.TeleBot("1389559561:AAGbQ0mIBnptbQ4-XCvqKLlNMN-szSIhyxI")
 ZERO = '\U00000030\U000020E3'
@@ -26,22 +27,46 @@ Song = collections.namedtuple('Song', ['link', 'title', 'mark', 'pos'])
 
 class Setup:
     def __init__(self):
-        self.make_default_setup()
+        self.config = {}
+        self.loads_config()
+        self.get_songs()
 
-    def make_default_setup(self):
-        self.users_for_promoting = []
-        self.count_music = 6
-        self.count_rows = 3
-        self.current_page = 1
-        links, titles = get_links(self.count_music)
-        self.songs = [Song(link=links[idx], title=titles[idx], mark=0, pos=str(idx)) for idx in range(self.count_music)]
-        self.voted_users = []
-        self.current_idx = 1
+    def loads_config(self):
+        with open("config.json") as r_file:
+            self.config = json.load(r_file)
+        self.users_for_promoting = self.config['usersForPromoting']
+        self.count_music = self.config['countMusic']
+        self.count_rows = self.config['countRows']
+        self.current_page = self.config['currentPage']
+        # links, titles = get_links(self.count_music)
+        # self.songs = [Song(link=links[idx], title=titles[idx], mark=0, pos=str(idx)) for idx in range(self.count_music)]
+        self.songs = self.config['songs']
+        self.voted_users = self.config['votedUsers']
+        self.current_idx = self.config['currentIdx']
         self.max_page = math.ceil(self.count_music / self.count_rows)
-        self.pool_started = False
-        self.message_id = None
-        self.pool_id = None
-        self.chat_id = None
+        self.poll_started = self.config['pollStarted']
+        self.message_id = self.config['messageId']
+        self.poll_id = self.config['pollId']
+        self.chat_id = self.config['chatId']
+
+    def get_songs(self):
+        self.songs = get_music_csv("nikita.csv")
+    # def make_default_setup(self):
+        # self.users_for_promoting = []
+        # self.count_music = 6
+        # self.count_rows = 3
+        # self.current_page = 1
+        # links, titles = get_links(self.count_music)
+        # self.songs = [Song(link=links[idx], title=titles[idx], mark=0, pos=str(idx)) for idx in range(self.count_music)]
+        # self.voted_users = []
+        # self.current_idx = 1
+        # self.max_page = math.ceil(self.count_music / self.count_rows)
+        # self.poll_started = False
+        # self.message_id = None
+        # self.poll_id = None
+        # self.chat_id = None
+
+    
 
 
 setup = Setup()
@@ -88,13 +113,13 @@ def update_pool_message(operation=None):
     for idx, song in enumerate(
             setup.songs[(setup.current_page - 1) * setup.count_rows: setup.current_page * setup.count_rows]):
         music_pool += f'{setup.current_idx + idx}. {song.title}\n'
-    bot.edit_message_text(music_pool, setup.chat_id, setup.pool_id, reply_markup=gen_markup())
+    bot.edit_message_text(music_pool, setup.chat_id, setup.poll_id, reply_markup=gen_markup())
 
 
 @bot.callback_query_handler(func=lambda call: True)
 def get_callback_query(call):
-    if not setup.pool_id:
-        setup.pool_id = call.message.message_id
+    if not setup.poll_id:
+        setup.poll_id = call.message.message_id
     if call.data == 'Next page':
         setup.current_page += 1
         update_pool_message(operation='add')
@@ -129,10 +154,10 @@ def get_help(message):
 @bot.message_handler(commands=['poll'])
 def create_pool(message):
     if check_admin_permissions(message):
-        if setup.pool_started:
+        if setup.poll_started:
             bot.send_message(message.chat.id, "Previous poll hasn't finished yet. Type /finish or use pinedMessage")
             return None
-        setup.pool_started = True
+        setup.poll_started = True
         music_pool = ''
         for idx, song in enumerate(
                 setup.songs[(setup.current_page - 1) * setup.count_rows:setup.current_page * setup.count_rows]):
@@ -147,7 +172,7 @@ def create_pool(message):
 
 @bot.message_handler(commands=['finish'])  # Unnecessary command
 def finish_poll(message):
-    if setup.pool_started:
+    if setup.poll_started:
         bot.unpin_chat_message(setup.chat_id)
         setup.make_default_setup()
     else:
@@ -175,7 +200,7 @@ def get_songs_top_list(message):
 @bot.message_handler(commands=['poptop'])
 def pop_element_from_top(message):
     if check_admin_permissions(message):
-        if setup.pool_started:
+        if setup.poll_started:
             try:
                 if message.text == 'poptop':
                     idx = 0
@@ -205,7 +230,7 @@ def pop_element_from_top(message):
             if is_changed:
                 for index in vote_remove_index_list:
                     setup.voted_users.pop(index)
-                bot.edit_message_reply_markup(setup.chat_id, setup.pool_id, reply_markup=gen_markup())
+                bot.edit_message_reply_markup(setup.chat_id, setup.poll_id, reply_markup=gen_markup())
         else:
             bot.send_message(message.chat.id, "Pool hasn't started yet. Type /poll to start")
     else:
