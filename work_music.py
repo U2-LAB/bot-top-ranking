@@ -33,15 +33,15 @@ def get_links(count_music):
     return links, titles
 
 
-def download_music_link(music_link):
-    link = MAIN_URL + music_link
+def download_music_link(music_link, name):
+    link = music_link
     req = requests.get(link, stream=True)
     if req.status_code == OK_STATUS_CODE:
-        with open('song.mp3', 'wb') as mp3:
+        with open(name, 'wb') as mp3:
             mp3.write(req.content)
 
 
-def create_csv(file_name):
+def create_csv(file_name, amount):
     """This is function create csv file from ZAYCEV.NET
     ```
     title, author, link
@@ -51,6 +51,7 @@ def create_csv(file_name):
     ```
     Args:
         file_name (str): Path to csv file
+        amount (str): amount of songs
     """
     songs = []
 
@@ -59,10 +60,10 @@ def create_csv(file_name):
 
     all_top_songs = soup.find_all(class_='musicset-track__download-link')
 
-    for song_a in all_top_songs[:26]:
+    for song_a in all_top_songs[:amount + 1]:
         song = {}
         song['author'], song['title'] = song_a.get('title').split(' ', 2)[-1].split(' – ', 1)
-        song['link'] = 'https://zaycev.net' + song_a.get('href')
+        song['link'] = ZAYCEV_URL + song_a.get('href')
         songs.append(song)
 
     with open(file_name, mode="w", encoding='utf-8') as w_file:
@@ -84,16 +85,13 @@ def get_music_csv(file_name):
         list[dict]: List with list of music with ```title, author, link```
     """
     songs = []
-    with open(file_name) as r_file:
+    with open(file_name, encoding='utf-8') as r_file:
         csv_reader = csv.DictReader(r_file, delimiter=',')
         for idx, song in enumerate(csv_reader):
-            if idx == 0:
+            if idx == 0:  # first line is headers
                 continue
             song['mark'] = 0
-            song['pos'] = idx
+            song['pos'] = None
             song['votedUsers'] = []
             songs.append(song)
     return songs
-
-
-create_csv("songs.csv")
