@@ -64,7 +64,8 @@ def create_csv(file_name, amount):
         song = {}
         song['author'], song['title'] = song_a.get('title').split(' ', 2)[-1].split(' – ', 1)
         song['link'] = ZAYCEV_URL + song_a.get('href')
-        songs.append(song)
+        if song["author"] and song["title"] and song["link"]:
+            songs.append(song)
 
     with open(file_name, mode="w", encoding='utf-8') as w_file:
         names = ["title", "author", "link"]
