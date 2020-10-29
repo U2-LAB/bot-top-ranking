@@ -2,17 +2,25 @@ import os
 
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from work_music import download_music_link
-
 
 def create_top(songs):
     top_list = sorted(songs, key=lambda song: song["mark"], reverse=True)
     return top_list
 
 
+def _download_music_link(music_link, name):
+    import requests
+    ok_status_code = 200
+    link = music_link
+    req = requests.get(link, stream=True)
+    if req.status_code == ok_status_code:
+        with open(name, 'wb') as mp3:
+            mp3.write(req.content)
+
+
 def upload_song(song, bot, state):
     song_name = f'{song["author"]} - {song["title"]}.mp3'
-    download_music_link(song["link"], song_name)
+    _download_music_link(song["link"], song_name)
     audio = open(song_name, 'rb')
     bot.send_audio(state.config["chatId"], audio)
     audio.close()
