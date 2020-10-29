@@ -3,11 +3,10 @@ import re
 
 import telebot
 from dotenv import load_dotenv
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from telebot.apihelper import ApiTelegramException
 
 from config_class import State
 from help_functions import upload_song, create_top, gen_markup
-from work_music import download_music_link
 
 load_dotenv()
 bot = telebot.TeleBot(os.getenv("BOT_TOKEN"))
@@ -94,12 +93,13 @@ def get_songs_top_list(message):
 def vote_for_song(message):
     try:
         idx = int(re.search(r'^/vote ([\d]*)$', message.text).group(1)) - 1
-    except AttributeError:
-        bot.send_message(state.config["chatId"], '/help')
-    else:
         if idx >= state.config["countMusic"] or idx < 0:
-            bot.send_message(state.config["chatId"], f'Type {state.config["countMusic"]} > number > 0')
-        elif message.from_user.id not in state.config["songs"][idx]["votedUsers"]:
+            raise AttributeError
+    except AttributeError:
+        reply_message = f'Number should be less than {state.config["countMusic"]} and greater than 0'
+        bot.send_message(state.config["chatId"], reply_message)
+    else:
+        if message.from_user.id not in state.config["songs"][idx]["votedUsers"]:
             song_item = state.config["songs"][idx]
             song_item["mark"] += 1
             song_item["votedUsers"].append(message.from_user.id)
@@ -120,23 +120,23 @@ def pop_element_from_top(message):
             idx = 0
         else:
             idx = int(re.search(r'^/poptop ([\d]*)$', message.text).group(1)) - 1
+        if idx >= state.config["countMusic"] or idx < 0:
+            raise AttributeError
     except AttributeError:
-        bot.send_message(state.config["chatId"], 'Incorrect input')
+        reply_message = f'Number should be less than {state.config["countMusic"]} and greater than 0'
+        bot.send_message(state.config["chatId"], reply_message)
     else:
-        if idx > state.config["countMusic"]:
-            bot.send_message(state.config["chatId"], f'Type {state.config["countMusic"]} < number')
+        top_list = create_top(state.config["songs"])
+        if state.config["uploadFlag"]:
+            upload_song(top_list[idx], bot, state)
         else:
-            top_list = create_top(state.config["songs"])
-            if state.config["uploadFlag"]:
-                upload_song(top_list[idx], bot, state)
-            else:
-                bot_reply_message = f'{top_list[idx]["author"]} | {top_list[idx]["title"]}'
-                bot.send_message(state.config["chatId"], bot_reply_message)
-            song_index = top_list[idx]["pos"] - 1  # positions of songs starts by 1
-            song_item = state.config["songs"][song_index]
-            song_item["votedUsers"] = []
-            song_item["mark"] = 0
-            state.config["songs"][song_index] = song_item
+            bot_reply_message = f'{top_list[idx]["author"]} | {top_list[idx]["title"]}'
+            bot.send_message(state.config["chatId"], bot_reply_message)
+        song_index = top_list[idx]["pos"] - 1  # positions of songs starts by 1
+        song_item = state.config["songs"][song_index]
+        song_item["votedUsers"] = []
+        song_item["mark"] = 0
+        state.config["songs"][song_index] = song_item
 
 
 @bot.message_handler(commands=['finish'])  # Unnecessary command
@@ -144,9 +144,11 @@ def pop_element_from_top(message):
 @started_pool
 def finish_poll(message):
     bot.unpin_chat_message(state.config["chatId"])
-    if os.path.exists(os.getenv("SAVED_JSON")):
-        os.remove(os.getenv("SAVED_JSON"))
+    state.config["pollStarted"] = False
+    state.config["songs"] = []
+    state.save_config()
     state.__init__()
+    bot.send_message(state.config["chatId"], "Poll was finished")
 
 
 @bot.message_handler(commands=['settings_mp3'])
@@ -167,37 +169,50 @@ def change_upload_flag(message):
 @bot.message_handler(commands=['poll_status'])
 @only_admins
 def get_poll_status(message):
-    status = f'Poll status\n———————————\nPoll_started: {state.config["pollStarted"]}\nUpload mp3: \
-{"on" if state.config["uploadFlag"] else "off"} '
+    status = (
+        'Poll status\n'
+        '———————————\n'
+        f'Poll_started: {state.config["pollStarted"]}\n'
+        f'Upload mp3: {"on" if state.config["uploadFlag"] else "off"}'
+    )
     bot.send_message(state.config["chatId"], status)
 
 
 @bot.message_handler(commands=['setDJ'])
+@only_admins
 def set_dj_by_user_id(message):
     try:
         mentioned_user = re.search(r'^/setDJ @([\w]*)', message.text).group(1)
     except AttributeError:
         bot.send_message(message.chat.id, '/help')
     else:
-        state.config["usersForPromoting"].append(mentioned_user)
+        if mentioned_user not in state.config["usersForPromoting"]:
+            state.config["usersForPromoting"].append(mentioned_user)
         bot.send_message(message.chat.id, f'@{mentioned_user} type /becomeDJ. It\'s privileges only for you ^_^')
 
 
 @bot.message_handler(commands=['becomeDJ'])
 def become_dj(message):
-    if message.from_user.username in state.config["usersForPromoting"]:
-        bot.promote_chat_member(message.chat.id, message.from_user.id, can_delete_messages=True)
-        bot.set_chat_administrator_custom_title(message.chat.id, message.from_user.id, 'DJ')
-        bot.send_message(
-            message.chat.id,
-            f'@{message.from_user.username} You have been promoted to DJ. Congratulate 🏆🏆🏆'
-        )
+    if message.from_user.username not in state.config["usersForPromoting"]:
+        bot.send_message(message.chat.id, "You cannot use this command")
+    else:
+        try:
+            bot.promote_chat_member(message.chat.id, message.from_user.id, can_delete_messages=True)
+            bot.set_chat_administrator_custom_title(message.chat.id, message.from_user.id, 'DJ')
+            state.config["usersForPromoting"].pop(state.config["usersForPromoting"].index(message.from_user.username))
+            bot.send_message(
+                message.chat.id,
+                f'@{message.from_user.username} You have been promoted to DJ. Congratulate 🏆🏆🏆'
+            )
+        except ApiTelegramException:
+            reply_bot_message = 'You are admin. Why do you try to do it??? (╮°-°)╮┳━━┳ ( ╯°□°)╯ ┻━━┻'
+            bot.send_message(message.chat.id, reply_bot_message)
 
 
 if __name__ == "__main__":
     try:
         bot.polling(none_stop=True)
-    except BaseException:
+    except:
         pass
     finally:
         state.save_config()
