@@ -1,7 +1,7 @@
 import json
 import os
 
-from work_with_csv import get_music_csv, create_csv
+from bot.work_with_csv import get_music_csv, create_csv
 
 
 class State:

@@ -1,13 +1,12 @@
 import os
 import re
-import math
 
 import telebot
 from dotenv import load_dotenv
 from telebot.apihelper import ApiTelegramException
 
-from config_class import State
-from help_functions import upload_song, create_top, gen_markup
+from bot.config_class import State
+from bot.help_functions import upload_song, create_top, gen_markup
 
 load_dotenv()
 bot = telebot.TeleBot(os.getenv("BOT_TOKEN"))
@@ -42,7 +41,7 @@ def get_help(message):
         "/poptop [num] output referenced song (e.g. /poptop or /poptop 5)\n"
         "/finish to end poll\n"
         "/setDJ [mentioned user] set mentioned people a DJ (e.g. /setDJ @Admin)\n"
-        "/settings_mp3 on|off\n"
+        "/settings_mp3 on|off (e.g. /settings_mp3 or /settings_mp3 on)\n"
         "/poll_status to print status of poll in this chat\n"
         "<b>User commands</b>\n"
         "/top [num] output top songs(e.g. /top 5)\n"
@@ -82,7 +81,7 @@ def get_songs_top_list(message):
         if top_number == 0:
             raise AttributeError
     except AttributeError:
-        bot.send_message(message.chat.id, 'Incorrect input type /help for information about commands')
+        bot.send_message(message.chat.id, 'Incorrect input. Type /help to get information about commands')
     else:
         for idx, song in enumerate(top_list[:top_number]):
             music_poll += f'{idx + 1}. {song["author"]} | {song["title"]} | {song["mark"]} Votes\n'
@@ -117,7 +116,7 @@ def vote_for_song(message):
 @started_pool
 def pop_element_from_top(message):
     try:
-        if message.text == '/poptop':
+        if message.text == '/poptop' or message.text == '/poptop@DrakeChronoSilviumBot':
             idx = 0
         else:
             idx = int(re.search(r'^/poptop ([\d]*)$', message.text).group(1)) - 1
@@ -155,7 +154,7 @@ def finish_poll(message):
 @bot.message_handler(commands=['settings_mp3'])
 @only_admins
 def change_upload_flag(message):
-    if message.text == '/settings_mp3' or '/settings_mp3@DrakeChronoSilviumBot':
+    if message.text == '/settings_mp3' or message.text == '/settings_mp3@DrakeChronoSilviumBot':
         state.config["uploadFlag"] = False if state.config["uploadFlag"] else True
     else:
         switch = message.text.replace('/settings_mp3', '').split()[0]
@@ -185,7 +184,7 @@ def set_dj_by_user_id(message):
     try:
         mentioned_user = re.search(r'^/setDJ @([\w]*)', message.text).group(1)
     except AttributeError:
-        bot.send_message(message.chat.id, '/help')
+        bot.send_message(message.chat.id, 'Incorrect input. Type /help to get information about commands')
     else:
         if mentioned_user not in state.config["usersForPromoting"]:
             state.config["usersForPromoting"].append(mentioned_user)
@@ -208,12 +207,3 @@ def become_dj(message):
         except ApiTelegramException:
             reply_bot_message = 'You are admin. Why do you try to do it??? (╮°-°)╮┳━━┳ ( ╯°□°)╯ ┻━━┻'
             bot.send_message(message.chat.id, reply_bot_message)
-
-
-if __name__ == "__main__":
-    try:
-        bot.polling(none_stop=True)
-    except:
-        pass
-    finally:
-        state.save_config()
