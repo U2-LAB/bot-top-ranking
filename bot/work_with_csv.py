@@ -56,6 +56,6 @@ def get_music_csv(file_name):
         for idx, song in enumerate(csv_reader):
             song['mark'] = 0
             song['pos'] = None
-            song['votedUsers'] = []
+            song['voted_users'] = []
             songs.append(song)
     return songs

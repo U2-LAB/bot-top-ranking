@@ -26,7 +26,7 @@ def only_admins(func):
 
 def started_pool(func):
     def check_is_pool_started(message):
-        if not state.config["pollStarted"]:
+        if not state.config["poll_started"]:
             bot.send_message(message.chat.id, "Poll hasn't started yet. Type /disco to start")
         else:
             func(message)
@@ -59,16 +59,16 @@ def callback_query(call):
 @bot.message_handler(commands=['disco'])
 @only_admins
 def create_poll(message):
-    if state.config["pollStarted"]:
+    if state.config["poll_started"]:
         bot.send_message(message.chat.id, "Previous poll hasn't finished yet. Type /finish or use pined Message")
     else:
-        state.config["pollStarted"] = True
-        state.config["chatId"] = message.chat.id
+        state.config["poll_started"] = True
+        state.config["chat_id"] = message.chat.id
         music_poll = ''
         for idx, song in enumerate(state.config["songs"]):
             music_poll += f'{idx + 1}. {song["author"]} | {song["title"]}\n'
-        poll = bot.send_message(state.config["chatId"], music_poll, reply_markup=gen_markup())
-        bot.pin_chat_message(state.config["chatId"], poll.message_id, disable_notification=True)
+        poll = bot.send_message(state.config["chat_id"], music_poll, reply_markup=gen_markup())
+        bot.pin_chat_message(state.config["chat_id"], poll.message_id, disable_notification=True)
 
 
 @bot.message_handler(commands=['top'])
@@ -93,21 +93,21 @@ def get_songs_top_list(message):
 def vote_for_song(message):
     try:
         idx = int(re.search(r'^/vote ([\d]*)$', message.text).group(1)) - 1
-        if idx >= state.config["countMusic"] or idx < 0:
+        if idx >= state.config["count_music"] or idx < 0:
             raise AttributeError
     except AttributeError:
-        reply_message = f'Number should be less than {state.config["countMusic"]} and greater than 0'
-        bot.send_message(state.config["chatId"], reply_message)
+        reply_message = f'Number should be less than {state.config["count_music"]} and greater than 0'
+        bot.send_message(state.config["chat_id"], reply_message)
     else:
-        if message.from_user.id not in state.config["songs"][idx]["votedUsers"]:
+        if message.from_user.id not in state.config["songs"][idx]["voted_users"]:
             song_item = state.config["songs"][idx]
             song_item["mark"] += 1
-            song_item["votedUsers"].append(message.from_user.id)
+            song_item["voted_users"].append(message.from_user.id)
             state.config["songs"][idx] = song_item
         else:
             song_item = state.config["songs"][idx]
             song_item["mark"] -= 1
-            song_item["votedUsers"].pop(song_item["votedUsers"].index(message.from_user.id))
+            song_item["voted_users"].pop(song_item["voted_users"].index(message.from_user.id))
             state.config["songs"][idx] = song_item
 
 
@@ -120,21 +120,21 @@ def pop_element_from_top(message):
             idx = 0
         else:
             idx = int(re.search(r'^/poptop ([\d]*)$', message.text).group(1)) - 1
-        if idx >= state.config["countMusic"] or idx < 0:
+        if idx >= state.config["count_music"] or idx < 0:
             raise AttributeError
     except AttributeError:
-        reply_message = f'Number should be less than {state.config["countMusic"]} and greater than 0'
-        bot.send_message(state.config["chatId"], reply_message)
+        reply_message = f'Number should be less than {state.config["count_music"]} and greater than 0'
+        bot.send_message(state.config["chat_id"], reply_message)
     else:
         top_list = create_top(state.config["songs"])
-        if state.config["uploadFlag"]:
+        if state.config["upload_flag"]:
             upload_song(top_list[idx], bot, state)
         else:
             bot_reply_message = f'{top_list[idx]["author"]} | {top_list[idx]["title"]}'
-            bot.send_message(state.config["chatId"], bot_reply_message)
+            bot.send_message(state.config["chat_id"], bot_reply_message)
         song_index = top_list[idx]["pos"] - 1  # positions of songs starts by 1
         song_item = state.config["songs"][song_index]
-        song_item["votedUsers"] = []
+        song_item["voted_users"] = []
         song_item["mark"] = 0
         state.config["songs"][song_index] = song_item
 
@@ -143,27 +143,27 @@ def pop_element_from_top(message):
 @only_admins
 @started_pool
 def finish_poll(message):
-    bot.unpin_chat_message(state.config["chatId"])
-    state.config["pollStarted"] = False
+    bot.unpin_chat_message(state.config["chat_id"])
+    state.config["poll_started"] = False
     state.config["songs"] = []
     state.save_config()
     state.__init__()
-    bot.send_message(state.config["chatId"], "Poll was finished")
+    bot.send_message(state.config["chat_id"], "Poll was finished")
 
 
 @bot.message_handler(commands=['settings_mp3'])
 @only_admins
-def change_upload_flag(message):
+def change_poll_started(message):
     if message.text == '/settings_mp3' or message.text == '/settings_mp3@DrakeChronoSilviumBot':
-        state.config["uploadFlag"] = False if state.config["uploadFlag"] else True
+        state.config["upload_flag"] = False if state.config["upload_flag"] else True
     else:
         switch = message.text.replace('/settings_mp3', '').split()[0]
         if switch == 'on':
-            state.config["uploadFlag"] = True
+            state.config["upload_flag"] = True
         elif switch == 'off':
-            state.config["uploadFlag"] = False
-    bot_message = f'uploading songs is <b>{"Enabled" if state.config["uploadFlag"] else "Disabled"}</b>'
-    bot.send_message(state.config["chatId"], bot_message, parse_mode="HTML")
+            state.config["upload_flag"] = False
+    bot_message = f'uploading songs is <b>{"Enabled" if state.config["upload_flag"] else "Disabled"}</b>'
+    bot.send_message(state.config["chat_id"], bot_message, parse_mode="HTML")
 
 
 @bot.message_handler(commands=['poll_status'])
@@ -172,10 +172,10 @@ def get_poll_status(message):
     status = (
         'Poll status\n'
         '———————————\n'
-        f'Poll_started: {state.config["pollStarted"]}\n'
-        f'Upload mp3: {"on" if state.config["uploadFlag"] else "off"}'
+        f'Poll started: {state.config["poll_started"]}\n'
+        f'Upload mp3: {"on" if state.config["upload_flag"] else "off"}'
     )
-    bot.send_message(state.config["chatId"], status)
+    bot.send_message(state.config["chat_id"], status)
 
 
 @bot.message_handler(commands=['setDJ'])
@@ -186,20 +186,20 @@ def set_dj_by_user_id(message):
     except AttributeError:
         bot.send_message(message.chat.id, 'Incorrect input. Type /help to get information about commands')
     else:
-        if mentioned_user not in state.config["usersForPromoting"]:
-            state.config["usersForPromoting"].append(mentioned_user)
+        if mentioned_user not in state.config["users_for_promoting"]:
+            state.config["users_for_promoting"].append(mentioned_user)
         bot.send_message(message.chat.id, f'@{mentioned_user} type /becomeDJ. It\'s privileges only for you ^_^')
 
 
 @bot.message_handler(commands=['becomeDJ'])
 def become_dj(message):
-    if message.from_user.username not in state.config["usersForPromoting"]:
+    if message.from_user.username not in state.config["users_for_promoting"]:
         bot.send_message(message.chat.id, "You cannot use this command")
     else:
         try:
             bot.promote_chat_member(message.chat.id, message.from_user.id, can_delete_messages=True)
             bot.set_chat_administrator_custom_title(message.chat.id, message.from_user.id, 'DJ')
-            state.config["usersForPromoting"].pop(state.config["usersForPromoting"].index(message.from_user.username))
+            state.config["users_for_promoting"].pop(state.config["users_for_promoting"].index(message.from_user.username))
             bot.send_message(
                 message.chat.id,
                 f'@{message.from_user.username} You have been promoted to DJ. Congratulate 🏆🏆🏆'

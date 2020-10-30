@@ -1,11 +1,13 @@
 import json
 import os
 
+from bot.marsh_schemas import StateSchema
 from bot.work_with_csv import get_music_csv, create_csv
 
 
 class State:
     def __init__(self):
+        self.schema = StateSchema()
         self.filename = os.getenv("MUSIC_FILE")
         self.config_filename = (
             os.getenv("SAVED_JSON")
@@ -16,9 +18,11 @@ class State:
 
     def loads_config(self):
         with open(self.config_filename) as r_file:
-            config = json.load(r_file)
+            json_data = json.load(r_file)
+            config = self.schema.load(json_data)
+
         if not config["songs"]:
-            create_csv(self.filename, config["countMusic"])
+            create_csv(self.filename, config["count_music"])
             config["songs"] = self.get_songs()
 
         config["songs"] = sorted(config["songs"], key=lambda song: song["title"])
@@ -30,11 +34,6 @@ class State:
         return get_music_csv(self.filename)
 
     def save_config(self):
-        data = json.load(open(self.config_filename))
         with open(os.getenv("SAVED_JSON"), 'w') as w_file:
-            data["chatId"] = self.config["chatId"]
-            data["usersForPromoting"] = self.config["usersForPromoting"]
-            data["songs"] = self.config["songs"]
-            data["pollStarted"] = self.config["pollStarted"]
-            data["uploadFlag"] = self.config["uploadFlag"]
-            json.dump(data, w_file, indent=4)
+            json_data = self.schema.dump(self.config)
+            json.dump(json_data, w_file, indent=4)
