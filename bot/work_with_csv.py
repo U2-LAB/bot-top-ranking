@@ -25,7 +25,7 @@ def create_csv(file_name, amount):
 
     all_top_songs = soup.find_all(class_='musicset-track__download-link')
 
-    for song_a in all_top_songs[:amount + 1]:
+    for song_a in all_top_songs[:amount]:
         song = {}
         song['author'], song['title'] = song_a.get('title').split(' ', 2)[-1].split(' – ', 1)
         song['link'] = ZAYCEV_URL + song_a.get('href')
@@ -54,8 +54,6 @@ def get_music_csv(file_name):
     with open(file_name, encoding='utf-8') as r_file:
         csv_reader = csv.DictReader(r_file, delimiter=',')
         for idx, song in enumerate(csv_reader):
-            if idx == 0:  # first line is headers
-                continue
             song['mark'] = 0
             song['pos'] = None
             song['votedUsers'] = []
