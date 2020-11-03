@@ -79,10 +79,13 @@ def test_vote_for_song(mock_message, song_pos):
 
 @pytest.mark.voting
 @pytest.mark.parametrize('song_pos', error_song_pos, ids=song_error_pos_idx)
-def test_vote_for_song_raises(mock_message, song_pos):
+def test_vote_for_song_raises(mock_message, song_pos, capsys):
     state.config["poll_started"] = True
+    expected_output = "Number should be less than 25 and greater than 0"
     mock_message.text = f"/vote {song_pos}"
     handlers.vote_for_song(mock_message)
+    out, err = capsys.readouterr()
+    assert out == expected_output
 
 
 @pytest.mark.smoke

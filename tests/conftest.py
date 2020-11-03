@@ -48,11 +48,9 @@ def set_temp_folder(tmpdir_factory):
     json_data = json.load(open(os.getenv("DEFAULT_JSON")))
     json_config.write(json.dumps(json_data, indent=4))
     state.__init__(path_to_save_config=json_config_to_save)
-    count_music = state.config["count_music"]
     state.save_config()
     yield json_config_to_save
     # shutil.rmtree(tmpdir_factory.getbasetemp())  # /tmp/pytest-of-kiryl/ base temp dir
-    print('END')
 
 
 @pytest.fixture(name="config", autouse=True)
