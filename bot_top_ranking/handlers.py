@@ -5,32 +5,13 @@ import telebot
 from dotenv import load_dotenv
 from telebot.apihelper import ApiTelegramException
 
-from bot.config_class import State
-from bot.help_functions import upload_song, create_top, gen_markup
+from bot_top_ranking.config_class import State
+from bot_top_ranking.help_functions import upload_song, create_top, gen_markup
+from bot_top_ranking.decorators import only_admins, started_pool, get_state
 
 load_dotenv()
 bot = telebot.TeleBot(os.getenv("BOT_TOKEN"))
 state = State()
-
-
-# Decorators
-def only_admins(func):
-    def check_admin_permissions(message):
-        admins_id = [admin.user.id for admin in bot.get_chat_administrators(message.chat.id)]
-        if message.from_user.id in admins_id:
-            func(message)
-        else:
-            bot.send_message(message.chat.id, "You don't have permission")
-    return check_admin_permissions
-
-
-def started_pool(func):
-    def check_is_pool_started(message):
-        if not state.config["poll_started"]:
-            bot.send_message(message.chat.id, "Poll hasn't started yet. Type /disco to start")
-        else:
-            func(message)
-    return check_is_pool_started
 
 
 @bot.message_handler(commands=['help'])
@@ -57,6 +38,7 @@ def callback_query(call):
 
 
 @bot.message_handler(commands=['disco'])
+@get_state(state, bot)
 @only_admins
 def create_poll(message):
     if state.config["poll_started"]:
@@ -72,6 +54,7 @@ def create_poll(message):
 
 
 @bot.message_handler(commands=['top'])
+@get_state(state, bot)
 @started_pool
 def get_songs_top_list(message):
     top_list = create_top(state.config["songs"])
@@ -89,6 +72,7 @@ def get_songs_top_list(message):
 
 
 @bot.message_handler(commands=['vote'])
+@get_state(state, bot)
 @started_pool
 def vote_for_song(message):
     try:
@@ -112,6 +96,7 @@ def vote_for_song(message):
 
 
 @bot.message_handler(commands=['poptop'])
+@get_state(state, bot)
 @only_admins
 @started_pool
 def pop_element_from_top(message):
@@ -140,6 +125,7 @@ def pop_element_from_top(message):
 
 
 @bot.message_handler(commands=['finish'])  # Unnecessary command
+@get_state(state, bot)
 @only_admins
 @started_pool
 def finish_poll(message):
@@ -152,8 +138,9 @@ def finish_poll(message):
 
 
 @bot.message_handler(commands=['settings_mp3'])
+@get_state(state, bot)
 @only_admins
-def change_poll_started(message):
+def change_upload_flag(message):
     if message.text == '/settings_mp3' or message.text == '/settings_mp3@DrakeChronoSilviumBot':
         state.config["upload_flag"] = False if state.config["upload_flag"] else True
     else:
@@ -167,6 +154,7 @@ def change_poll_started(message):
 
 
 @bot.message_handler(commands=['poll_status'])
+@get_state(state, bot)
 @only_admins
 def get_poll_status(message):
     status = (
@@ -175,14 +163,15 @@ def get_poll_status(message):
         f'Poll started: {state.config["poll_started"]}\n'
         f'Upload mp3: {"on" if state.config["upload_flag"] else "off"}'
     )
-    bot.send_message(state.config["chat_id"], status)
+    bot.send_message(message.chat.id, status)
 
 
 @bot.message_handler(commands=['setDJ'])
+@get_state(state, bot)
 @only_admins
 def set_dj_by_user_id(message):
     try:
-        mentioned_user = re.search(r'^/setDJ @([\w]*)', message.text).group(1)
+        mentioned_user = re.search(r'^/setDJ @([\w]+)', message.text).group(1)
     except AttributeError:
         bot.send_message(message.chat.id, 'Incorrect input. Type /help to get information about commands')
     else:
