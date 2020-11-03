@@ -6,9 +6,9 @@ from bot_top_ranking.work_with_csv import get_music_csv, create_csv
 
 
 class State:
-    def __new__(cls):
+    def __new__(cls, *args, **kwargs):
         if not hasattr(cls, 'instance'):
-            cls.instance = super(State, cls).__new__(cls)
+            cls.instance = super(State, cls).__new__(cls, *args, **kwargs)
         return cls.instance
 
     def __init__(self, path_to_config=None, path_to_save_config=None):

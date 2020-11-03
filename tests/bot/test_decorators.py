@@ -19,15 +19,13 @@ def test_get_state(mocker, mock_message):
     @decorators.get_state(*expected_result)
     def check_params():
         return decorators.get_state.state, decorators.get_state.bot
-
     assert check_params() == expected_result
 
 
 @pytest.mark.decorator
 def test_only_admin_decorator(mocker, mock_message, capsys):
-    mocker.patch.object(bot, "get_chat_administrators", return_value=[User(types.User(1, None, 'Tester'))])
+    mocker.patch.object(bot, "get_chat_administrators", return_value=[User(types.User(bot.get_me().id, None, 'Tester'))])
     expected_output = "only_admin_achieved"
-    mock_message.from_user.id = 1
 
     @decorators.only_admins
     @decorators.get_state(state, bot)
@@ -41,8 +39,8 @@ def test_only_admin_decorator(mocker, mock_message, capsys):
 
 @pytest.mark.decorator
 def test_only_admin_decorator_raises(mocker, mock_message, capsys):
-    mocker.patch.object(bot, "get_chat_administrators", return_value=[])
     expected_output = "You don't have permission"
+    mock_message.from_user.id = 0
 
     @decorators.only_admins
     @decorators.get_state(state, bot)
