@@ -1,32 +1,26 @@
 import json
-import os
 import shutil
-import time
+import os
+
+import pytest
+from dotenv import load_dotenv
+from telebot import types
 
 from bot_top_ranking.config_class import State
 from bot_top_ranking.handlers import bot
-import pytest
-# from dotenv import load_dotenv
-from telebot import TeleBot, types
 
+load_dotenv()
 
-#
-# load_dotenv()
-#
-# should_skip = 'BOT_TOKEN' not in os.environ
-# COUNT_MUSIC = state.config["count_music"]
-# if not should_skip:
-#     TOKEN = os.environ['BOT_TOKEN']
-#     CHAT_ID = os.environ['CHAT_ID']
-#
 CHAT_ID = os.getenv("CHAT_ID")
 state = State()
+
 
 @pytest.fixture(autouse=True)
 def set_mock_send_message(mocker, mock_message):
     def stub_send_message(chat_id, message, *args, **kwargs):
         print(message, end='')
         return mock_message
+
     mocker.patch.object(bot, 'send_message', new=stub_send_message)
 
 
@@ -65,5 +59,3 @@ def set_temp_folder(tmpdir_factory):
 def set_default_state(set_temp_folder):
     path_to_config = set_temp_folder
     state.__init__(path_to_config=path_to_config)
-
-
