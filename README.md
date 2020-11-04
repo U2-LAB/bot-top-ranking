@@ -38,6 +38,7 @@ CONFIG_PATH = "configs/"
 DEFAULT_JSON = "${CONFIG_PATH}default_config.json"
 SAVED_JSON = "${CONFIG_PATH}saved_config.json"
 MUSIC_FILE = "music.csv"
+CHAT_ID = 123456789
 ```
 __BOT_TOKEN__  - Your token for using bot in telegram. 
 :warning:`Don't add your token in repository`
@@ -48,7 +49,9 @@ __DEFAULT_JSON__ - Name of json file, that will be loaded when bot start for fir
 
 __SAVED_JSON__ - Name of json file, that will be created and then bot will loaded from this file, when the music-poll finish.
 
-__MUSIC_FILE__ - Name of the *.csv file that contains song in format
+__CHAT_ID__ - Parameter needed for testing your bot
+
+__MUSIC_FILE__ - Name of the *.csv file that contains song in format belong
 
 | title | author | link |
 | :---: | :---: | :---: |

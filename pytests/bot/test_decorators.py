@@ -5,7 +5,7 @@ from telebot import types
 
 from bot_top_ranking import decorators
 from bot_top_ranking.config_class import State
-from tests.conftest import bot
+from pytests.conftest import bot
 
 User = namedtuple('User', ['user'])
 state = State()

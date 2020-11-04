@@ -5,7 +5,7 @@ import telebot
 
 import bot_top_ranking.handlers as handlers
 from bot_top_ranking.help_functions import create_top
-from tests.conftest import bot, state
+from pytests.conftest import bot, state
 
 DJ = namedtuple('DJ', ["promoting_users", "username", "expected_output"])
 
