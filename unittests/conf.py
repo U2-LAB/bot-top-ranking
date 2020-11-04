@@ -1,6 +1,8 @@
+import json
 import os
 
 from telebot import types
+from telebot.apihelper import ApiTelegramException
 
 
 def chat():
@@ -57,7 +59,12 @@ def mock_unpin_chat_message(chat_id):
     pass
 
 def mock_promote_chat_member(id,user_id,can_delete_messages=True):
-    pass
+    if user_id == 666:
+        result_json = {
+            "error_code" : 444,
+            "description" : 'descr'
+        }
+        raise ApiTelegramException('func','res',result_json)
 
 def mock_set_chat_administrator_custom_title(chat_id,user_id,name):
     pass
