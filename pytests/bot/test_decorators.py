@@ -13,9 +13,9 @@ state = State()
 
 @pytest.mark.smoke
 @pytest.mark.decorator
-def test_get_state(mocker, mock_message):
+def test_get_state(mocker):
     mocker.patch.object(bot, "get_chat_administrators", return_valus=[])
-    expected_result = ('state', 'bot')
+    expected_result = (state, bot)
 
     @decorators.get_state(*expected_result)
     def check_params():

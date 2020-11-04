@@ -1,0 +1,10 @@
+# .coveragerc to control coverage.py
+[run]
+source_pkgs = bot_top_ranking
+
+[report]
+exclude_lines =
+    def __enter__
+    def __exit__
+
+omit = */__main__.*
