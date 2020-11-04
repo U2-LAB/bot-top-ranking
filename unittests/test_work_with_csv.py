@@ -1,6 +1,7 @@
 import unittest
 import os
 import time
+import csv
 
 import telebot
 
@@ -22,8 +23,32 @@ class TestWorkWithCsv(unittest.TestCase):
         work_with_csv.create_csv(self.csv_filename, self.amount)
         
         self.assertTrue(os.path.exists(self.csv_filename))
-    
-    def test_get_music_csv(self):
-        self.assertEqual(len(work_with_csv.get_music_csv(self.csv_filename)), self.amount)
+        os.remove(self.csv_filename)
 
     
+    def test_get_music_csv(self):
+        test_song = {
+            'author' : 'Imagine Dragons',
+            'title' : 'Demons',
+            'link' : 'www.com'
+        }
+
+        expected_result = {
+            'author' : 'Imagine Dragons',
+            'title' : 'Demons',
+            'link' : 'www.com',
+            'mark' : 0,
+            'pos' : 1,
+            'voted_users' : []
+        }
+
+        with open(self.csv_filename, mode="w", encoding='utf-8') as w_file:
+            names = ["title", "author", "link"]
+            csv_writer = csv.DictWriter(w_file, delimiter=',', lineterminator='\r', fieldnames=names)
+            csv_writer.writeheader()
+            csv_writer.writerow(test_song)
+
+        
+        self.assertEqual(len(work_with_csv.get_music_csv(self.csv_filename)), 1)
+        self.assertEqual(work_with_csv.get_music_csv(self.csv_filename)[0],expected_result)
+        os.remove(self.csv_filename)

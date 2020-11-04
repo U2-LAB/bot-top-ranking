@@ -35,17 +35,12 @@ class TestHelpFunctions(unittest.TestCase):
         keyboard.add(types.InlineKeyboardButton("Help", callback_data="help"),)
         self.assertEqual(help_functions.gen_markup().__dict__, keyboard.__dict__)
 
-    @patch('bot_top_ranking.help_functions._download_music_link',side_effect=mock_download_music_link)
-    def test_download_music_link(self, mock_dwnld):
+    def test_download_music_link(self):
         link = 'https://zaycev.net/musicset/dl/65f2858273af4c1747dcf013b4402a88/21847355.json'
-        self.assertIsNone(help_functions._download_music_link(link,'author - title.mp3'))
-        capture = get_capture('author - title.mp3')
-        expected_output = 'Song in mp3'
-        self.assertEqual(capture,expected_output)
+        file_name = 'author - title.mp3'
+        self.assertIsNone(help_functions._download_music_link(link,file_name))
+        self.assertTrue(os.path.exists(file_name))
 
-    def test_incorrect_music_link(self):
-        link = 'https://vk.com'
-        self.assertIsNone(help_functions._download_music_link(link,'author - title.mp3'))
 
     @patch('bot_top_ranking.help_functions._download_music_link',side_effect=mock_download_music_link)
     def test_upload_song(self, mock_dwnld):

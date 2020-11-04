@@ -44,7 +44,6 @@ class TestDecorators(unittest.TestCase):
         
         self.assertEqual(check_params(),expected_result)
 
-    # @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
     def test_only_admin_decorator(self):
         bot = Mock()
         bot.get_chat_administrators.return_value = [User(types.User(bot.get_me().id, None, 'Tester'))]

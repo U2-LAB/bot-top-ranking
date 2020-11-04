@@ -23,13 +23,15 @@ from .conf import (
     mock_promote_chat_member,
     mock_set_chat_administrator_custom_title,
     mock_send_audio, 
-    mock_download_music_link
+    mock_download_music_link,
+    get_songs
 )
 from unittest import skip
 from unittest.mock import patch
 from dotenv import load_dotenv
 
 load_dotenv()
+
 
 
 class TestHandlers(unittest.TestCase):
@@ -96,7 +98,8 @@ class TestHandlers(unittest.TestCase):
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
     def test_get_songs_top_list(self,mock_message, smth):
         params = [1, 12, 23, 567]
-        state.config["songs"] = get_music_csv('Test.csv')
+        
+        state.config["songs"] = get_songs()
         state.config['poll_started'] = True
         
         
@@ -132,7 +135,7 @@ class TestHandlers(unittest.TestCase):
                 self.assertEqual(capture,'Incorrect input. Type /help to get information about commands')
 
     def test_vote_for_song(self):
-        state.config["songs"] = get_music_csv('Test.csv')
+        state.config["songs"] = get_songs()
         state.config['poll_started'] = True
         
         song_id = 1 # song #2 because array start from 0
@@ -144,7 +147,7 @@ class TestHandlers(unittest.TestCase):
         self.assertEqual(begin_mark+1, state.config["songs"][song_id]["mark"])
 
     def test_unvote_song(self):
-        state.config["songs"] = get_music_csv('Test.csv')
+        state.config["songs"] = get_songs()
         state.config['poll_started'] = True
 
         song_id = 2
@@ -159,7 +162,7 @@ class TestHandlers(unittest.TestCase):
 
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
     def test_pervote_song(self,mock_message):
-        state.config['songs'] = get_music_csv('Test.csv')
+        state.config['songs'] = get_songs()
         state.config['poll_started'] = True
 
         vote_message = message(self.User,self.Chat,'/vote 88889')
@@ -177,7 +180,7 @@ class TestHandlers(unittest.TestCase):
     def test_pop_element_from_top_notupload(self,mock_message, mock_audio, down_link, pin):
         
 
-        state.config["songs"] = get_music_csv('Test.csv')
+        state.config["songs"] = get_songs()
         params = [1, 5, 12]
         for param in params:
             with self.subTest():
@@ -198,7 +201,7 @@ class TestHandlers(unittest.TestCase):
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
     def test_pop_element_from_top_empty(self,mock_message, mock_audio, down_link, pin):
         
-        state.config["songs"] = get_music_csv('Test.csv')
+        state.config["songs"] = get_songs()
         state.config['poll_started'] = True
 
         poptop_message = message(self.User, self.Chat, '/poptop')
@@ -216,7 +219,7 @@ class TestHandlers(unittest.TestCase):
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
     def test_pop_element_from_top_unnumber(self,mock_message, mock_audio, down_link, pin):
         
-        state.config["songs"] = get_music_csv('Test.csv')
+        state.config["songs"] = get_songs()
         state.config['poll_started'] = True
 
         poptop_message = message(self.User, self.Chat, '/poptop 22222')
@@ -235,6 +238,7 @@ class TestHandlers(unittest.TestCase):
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
     @patch('bot_top_ranking.handlers.state.__init__',side_effect=mock_state_init)
     def test_finish_poll(self,mock_message, mock_state, mock_unpin):
+        
         state.config["poll_started"] = True
 
         self.assertIsNone(handlers.finish_poll(self.Message))
@@ -246,8 +250,7 @@ class TestHandlers(unittest.TestCase):
 
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
     def test_change_upload_flag(self, mock_message):
-        state.filename = 'Test.csv'
-        state.get_songs()
+        state.config["songs"] = get_songs()
         state.config['poll_started'] = True
 
         params = ['off', 'on', '', 123]
