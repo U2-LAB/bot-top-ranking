@@ -52,6 +52,12 @@ def mock_download_music_link(link,name):
         mp3_test.truncate()
         mp3_test.write(b'Song in mp3')
 
+def mock_upload_song(song,bot,state):
+    with open('upload_song.txt','w+') as f:
+        f.seek(0)
+        f.truncate()
+        f.write(song['author'] + ' | ' + song['title'])
+
 def mock_state_init():
     pass
 

@@ -14,6 +14,7 @@ from .conf import (
     call, 
     message, 
     chat, 
+    mock_upload_song, 
     user, 
     mock_send_message, 
     mock_pin_chat_message, 
@@ -84,7 +85,6 @@ class TestHandlers(unittest.TestCase):
     def test_create_poll(self, mock_message, smth):
         state.config['poll_started'] = False
         self.assertIsNone(handlers.create_poll(self.Message))
-        self.assertTrue(state.config['poll_started'])
         
         capture = get_capture()
 
@@ -92,6 +92,17 @@ class TestHandlers(unittest.TestCase):
         for idx, song in enumerate(state.config["songs"]):
             music_poll += f'{idx + 1}. {song["author"]} | {song["title"]}\n'
         self.assertEqual(capture,music_poll)
+
+    @patch('bot_top_ranking.handlers.bot.pin_chat_message', sedi_effect=mock_pin_chat_message)
+    @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
+    def test_create_poll_raise(self,mock_message, smth):
+        state.config['poll_started'] = True
+        self.assertIsNone(handlers.create_poll(self.Message))
+
+        capture = get_capture()
+        expected_capture = "Previous poll hasn't finished yet. Type /finish or use pined Message"
+        self.assertEqual(capture, expected_capture)
+
 
 
     @patch('bot_top_ranking.handlers.bot.pin_chat_message', sedi_effect=mock_pin_chat_message)
@@ -101,7 +112,6 @@ class TestHandlers(unittest.TestCase):
         
         state.config["songs"] = get_songs()
         state.config['poll_started'] = True
-        
         
         for param in params:
             with self.subTest():
@@ -173,7 +183,7 @@ class TestHandlers(unittest.TestCase):
         expected_output = f'Number should be less than {state.config["count_music"]} and greater than 0'
         self.assertEqual(capture, expected_output)
 
-    @patch('bot_top_ranking.handlers.bot.pin_chat_message', sedi_effect=mock_pin_chat_message)
+    @patch('bot_top_ranking.handlers.bot.pin_chat_message', side_effect=mock_pin_chat_message)
     @patch('bot_top_ranking.help_functions._download_music_link',side_effect=mock_download_music_link)
     @patch('bot_top_ranking.handlers.bot.send_audio', side_effect=mock_send_audio)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
@@ -190,6 +200,26 @@ class TestHandlers(unittest.TestCase):
                 poptop_message = message(self.User, self.Chat, f'/poptop {param}'.strip())
                 self.assertIsNone(handlers.pop_element_from_top(poptop_message))
                 capture = get_capture()
+                top_list = create_top(state.config["songs"])
+                
+                expected_output = top_list[param-1]['author'] + ' | ' + top_list[param-1]['title']
+                self.assertEqual(capture,expected_output)
+
+    @patch('bot_top_ranking.help_functions.upload_song', side_effect=mock_upload_song)
+    @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
+    def test_pop_element_from_top_upload(self,mock_message, mock_upload):
+        state.config["songs"] = get_songs()
+        state.config['upload_flag'] = True
+        
+        params = [1, 5, 12]
+        for param in params:
+            with self.subTest():
+                # print(state.config["songs"])
+                state.config['poll_started'] = True
+
+                poptop_message = message(self.User, self.Chat, f'/poptop {param}'.strip())
+                self.assertIsNone(handlers.pop_element_from_top(poptop_message))
+                capture = get_capture('upload_song.txt')
                 top_list = create_top(state.config["songs"])
                 
                 expected_output = top_list[param-1]['author'] + ' | ' + top_list[param-1]['title']
@@ -290,10 +320,10 @@ class TestHandlers(unittest.TestCase):
 
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
     def test_set_dj_by_user_id(self,mock_message):
-        user_tag = 'nikefr7'
-        mentioned_message = message(self.User,self.Chat,f'/setDJ @{user_tag}')
+        user_tag = 'admin'
+        mentioned_message = message(user(username='admin'),self.Chat,f'/setDJ @{user_tag}')
         self.assertIsNone(handlers.set_dj_by_user_id(mentioned_message))        
-        self.assertEqual(state.config["users_for_promoting"][0],user_tag)
+        self.assertEqual(state.config["users_for_promoting"][-1],user_tag)
         capture = get_capture()
         expected_output = f'@{user_tag} type /becomeDJ. It\'s privileges only for you ^_^'
         self.assertEqual(capture,expected_output)

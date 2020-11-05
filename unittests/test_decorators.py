@@ -68,7 +68,7 @@ class TestDecorators(unittest.TestCase):
         @decorators.only_admins
         @decorators.get_state(state,bot)
         def stub(message):
-            pass
+            print()
 
         stub(message(user(id=0),self.Chat))
         capture = get_capture()
@@ -102,7 +102,7 @@ class TestDecorators(unittest.TestCase):
         @decorators.started_pool
         @decorators.get_state(state, bot)
         def stub(message):
-            pass
+            print('smth')
 
         stub(self.Message)
         capture = get_capture()

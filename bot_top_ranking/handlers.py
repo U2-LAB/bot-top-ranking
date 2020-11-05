@@ -1,7 +1,9 @@
+import bot_top_ranking
 import os
 import re
 
 import telebot
+from bot_top_ranking import help_functions
 from dotenv import load_dotenv
 from telebot.apihelper import ApiTelegramException
 
@@ -113,7 +115,7 @@ def pop_element_from_top(message):
     else:
         top_list = create_top(state.config["songs"])
         if state.config["upload_flag"]:
-            upload_song(top_list[idx], bot, state)
+            help_functions.upload_song(top_list[idx], bot, state)
         else:
             bot_reply_message = f'{top_list[idx]["author"]} | {top_list[idx]["title"]}'
             bot.send_message(state.config["chat_id"], bot_reply_message)
