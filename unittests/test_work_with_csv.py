@@ -8,7 +8,7 @@ import telebot
 from bot_top_ranking import work_with_csv
 from bot_top_ranking.handlers import state
 
-from .conf import call, message, chat, user
+from unittests.conf import call, message, chat, user
 from unittest import skip
 from dotenv import load_dotenv
 

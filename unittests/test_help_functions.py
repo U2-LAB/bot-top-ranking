@@ -8,7 +8,7 @@ from telebot import types
 from bot_top_ranking import help_functions
 from bot_top_ranking.handlers import state
 
-from .conf import (
+from unittests.conf import (
     message,
     chat,
     user,

@@ -10,7 +10,7 @@ from telebot import types
 from collections import namedtuple
 
 
-from .conf import (
+from unittests.conf import (
     message, 
     chat, 
     user, 

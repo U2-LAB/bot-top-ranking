@@ -10,7 +10,7 @@ from bot_top_ranking.handlers import state
 from bot_top_ranking.help_functions import create_top
 from bot_top_ranking.work_with_csv import get_music_csv
 
-from .conf import (
+from unittests.conf import (
     call, 
     message, 
     chat, 
@@ -80,7 +80,7 @@ class TestHandlers(unittest.TestCase):
         )
         self.assertEqual(capture,expected_output)
     
-    @patch('bot_top_ranking.handlers.bot.pin_chat_message', sedi_effect=mock_pin_chat_message)
+    @patch('bot_top_ranking.handlers.bot.pin_chat_message', side_effect=mock_pin_chat_message)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
     def test_create_poll(self, mock_message, smth):
         state.config['poll_started'] = False
@@ -93,7 +93,7 @@ class TestHandlers(unittest.TestCase):
             music_poll += f'{idx + 1}. {song["author"]} | {song["title"]}\n'
         self.assertEqual(capture,music_poll)
 
-    @patch('bot_top_ranking.handlers.bot.pin_chat_message', sedi_effect=mock_pin_chat_message)
+    @patch('bot_top_ranking.handlers.bot.pin_chat_message', side_effect=mock_pin_chat_message)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
     def test_create_poll_raise(self,mock_message, smth):
         state.config['poll_started'] = True
@@ -105,7 +105,7 @@ class TestHandlers(unittest.TestCase):
 
 
 
-    @patch('bot_top_ranking.handlers.bot.pin_chat_message', sedi_effect=mock_pin_chat_message)
+    @patch('bot_top_ranking.handlers.bot.pin_chat_message', side_effect=mock_pin_chat_message)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
     def test_get_songs_top_list(self,mock_message, smth):
         params = [1, 12, 23, 567]
@@ -126,7 +126,7 @@ class TestHandlers(unittest.TestCase):
                     music_poll += f'{idx + 1}. {song["author"]} | {song["title"]} | {song["mark"]} Votes\n'
                 self.assertEqual(capture,music_poll)
 
-    @patch('bot_top_ranking.handlers.bot.pin_chat_message', sedi_effect=mock_pin_chat_message)
+    @patch('bot_top_ranking.handlers.bot.pin_chat_message', side_effect=mock_pin_chat_message)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
     def test_get_songs_top_list_wrong(self,mock_message,mockk_pin):
         params = [0,'qwerty','']
@@ -225,7 +225,7 @@ class TestHandlers(unittest.TestCase):
                 expected_output = top_list[param-1]['author'] + ' | ' + top_list[param-1]['title']
                 self.assertEqual(capture,expected_output)
 
-    @patch('bot_top_ranking.handlers.bot.pin_chat_message', sedi_effect=mock_pin_chat_message)
+    @patch('bot_top_ranking.handlers.bot.pin_chat_message', sidi_effect=mock_pin_chat_message)
     @patch('bot_top_ranking.help_functions._download_music_link',side_effect=mock_download_music_link)
     @patch('bot_top_ranking.handlers.bot.send_audio', side_effect=mock_send_audio)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
@@ -243,7 +243,7 @@ class TestHandlers(unittest.TestCase):
         expected_output = top_list[0]['author'] + ' | ' + top_list[0]['title']
         self.assertEqual(capture,expected_output)
 
-    @patch('bot_top_ranking.handlers.bot.pin_chat_message', sedi_effect=mock_pin_chat_message)
+    @patch('bot_top_ranking.handlers.bot.pin_chat_message', side_effect=mock_pin_chat_message)
     @patch('bot_top_ranking.help_functions._download_music_link',side_effect=mock_download_music_link)
     @patch('bot_top_ranking.handlers.bot.send_audio', side_effect=mock_send_audio)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
