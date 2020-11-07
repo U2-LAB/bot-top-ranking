@@ -1,19 +1,10 @@
-import bot_top_ranking
-import os
 import re
 
-import telebot
-from bot_top_ranking import help_functions
-from dotenv import load_dotenv
 from telebot.apihelper import ApiTelegramException
 
-from bot_top_ranking.config_class import State
-from bot_top_ranking.help_functions import upload_song, create_top, gen_markup
-from bot_top_ranking.decorators import only_admins, started_pool, get_state
-
-load_dotenv()
-bot = telebot.TeleBot(os.getenv("BOT_TOKEN"))
-state = State()
+from bot_top_ranking.decorators import only_admins, started_pool
+from bot_top_ranking.help_functions import create_top, gen_markup, upload_song
+from bot_top_ranking.utils import bot, state
 
 
 @bot.message_handler(commands=['help'])
@@ -40,7 +31,6 @@ def callback_query(call):
 
 
 @bot.message_handler(commands=['disco'])
-@get_state(state, bot)
 @only_admins
 def create_poll(message):
     if state.config["poll_started"]:
@@ -56,7 +46,6 @@ def create_poll(message):
 
 
 @bot.message_handler(commands=['top'])
-@get_state(state, bot)
 @started_pool
 def get_songs_top_list(message):
     top_list = create_top(state.config["songs"])
@@ -74,7 +63,6 @@ def get_songs_top_list(message):
 
 
 @bot.message_handler(commands=['vote'])
-@get_state(state, bot)
 @started_pool
 def vote_for_song(message):
     try:
@@ -98,7 +86,6 @@ def vote_for_song(message):
 
 
 @bot.message_handler(commands=['poptop'])
-@get_state(state, bot)
 @only_admins
 @started_pool
 def pop_element_from_top(message):
@@ -115,7 +102,7 @@ def pop_element_from_top(message):
     else:
         top_list = create_top(state.config["songs"])
         if state.config["upload_flag"]:
-            help_functions.upload_song(top_list[idx], bot, state)
+            upload_song(top_list[idx], bot, state)
         else:
             bot_reply_message = f'{top_list[idx]["author"]} | {top_list[idx]["title"]}'
             bot.send_message(state.config["chat_id"], bot_reply_message)
@@ -126,8 +113,7 @@ def pop_element_from_top(message):
         state.config["songs"][song_index] = song_item
 
 
-@bot.message_handler(commands=['finish'])  # Unnecessary command
-@get_state(state, bot)
+@bot.message_handler(commands=['finish'])
 @only_admins
 @started_pool
 def finish_poll(message):
@@ -140,7 +126,6 @@ def finish_poll(message):
 
 
 @bot.message_handler(commands=['settings_mp3'])
-@get_state(state, bot)
 @only_admins
 def change_upload_flag(message):
     if message.text == '/settings_mp3' or message.text == '/settings_mp3@DrakeChronoSilviumBot':
@@ -156,7 +141,6 @@ def change_upload_flag(message):
 
 
 @bot.message_handler(commands=['poll_status'])
-@get_state(state, bot)
 @only_admins
 def get_poll_status(message):
     status = (
@@ -169,7 +153,6 @@ def get_poll_status(message):
 
 
 @bot.message_handler(commands=['setDJ'])
-@get_state(state, bot)
 @only_admins
 def set_dj_by_user_id(message):
     try:

@@ -4,7 +4,7 @@ import pytest
 from telebot import types
 
 from bot_top_ranking import help_functions
-from bot_top_ranking.handlers import bot
+from bot_top_ranking.utils import bot
 from bot_top_ranking.config_class import State
 
 

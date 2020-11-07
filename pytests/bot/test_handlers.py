@@ -3,9 +3,9 @@ from collections import namedtuple
 import pytest
 import telebot
 
-import bot_top_ranking.handlers as handlers
-from bot_top_ranking.help_functions import create_top
-from pytests.conftest import bot, state
+from bot_top_ranking import handlers
+from bot_top_ranking import help_functions
+from bot_top_ranking.utils import bot, state
 
 DJ = namedtuple('DJ', ["promoting_users", "username", "expected_output"])
 
@@ -94,7 +94,7 @@ def test_get_songs_top_list(mock_message, capsys, amount):
     state.config["poll_started"] = True
     mock_message.text = f'/top {amount}'
     expected_output = ''
-    top_list = create_top(state.config["songs"])
+    top_list = help_functions.create_top(state.config["songs"])
     for idx, song in enumerate(top_list[:amount]):
         expected_output += f'{idx + 1}. {song["author"]} | {song["title"]} | {song["mark"]} Votes\n'
     handlers.get_songs_top_list(mock_message)

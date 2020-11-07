@@ -1,18 +1,15 @@
 import json
-import shutil
 import os
 
 import pytest
 from dotenv import load_dotenv
 from telebot import types
 
-from bot_top_ranking.config_class import State
-from bot_top_ranking.handlers import bot
+from bot_top_ranking.utils import bot, state
 
 load_dotenv()
 
 CHAT_ID = os.getenv("CHAT_ID")
-state = State()
 
 
 @pytest.fixture(autouse=True)
