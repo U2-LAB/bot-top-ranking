@@ -1,6 +1,5 @@
-from bot_top_ranking.handlers import bot
-from bot_top_ranking.config_class import State
+from bot_top_ranking.handlers import bot, state
 
 if __name__ == "__main__":
-    with State():
+    with state:
         bot.polling(none_stop=True)
