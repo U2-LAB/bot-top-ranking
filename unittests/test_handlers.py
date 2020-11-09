@@ -1,14 +1,9 @@
 import unittest
-import os
-import time
-
-import telebot
 
 from bot_top_ranking import handlers
-from bot_top_ranking.handlers import state
+from bot_top_ranking.utils import state, bot
 
 from bot_top_ranking.help_functions import create_top
-from bot_top_ranking.work_with_csv import get_music_csv
 
 from unittests.conf import (
     call, 
@@ -25,9 +20,10 @@ from unittests.conf import (
     mock_set_chat_administrator_custom_title,
     mock_send_audio, 
     mock_download_music_link,
-    get_songs
+    get_songs,
+    mock_promote_chat_member_raise,
+    mocK_get_chat_administrators
 )
-from unittest import skip
 from unittest.mock import patch
 from dotenv import load_dotenv
 
@@ -37,7 +33,6 @@ load_dotenv()
 
 class TestHandlers(unittest.TestCase):
     def setUp(self):
-        self.bot = telebot.TeleBot(os.getenv("BOT_TOKEN"))
         self.User = user()
         self.Chat = chat()
         self.Message = message(self.User,self.Chat)
@@ -80,9 +75,10 @@ class TestHandlers(unittest.TestCase):
         )
         self.assertEqual(capture,expected_output)
     
+    @patch('bot_top_ranking.utils.bot.get_chat_administrators',side_effect=mocK_get_chat_administrators)
     @patch('bot_top_ranking.handlers.bot.pin_chat_message', side_effect=mock_pin_chat_message)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
-    def test_create_poll(self, mock_message, smth):
+    def test_create_poll(self, mock_message, smth, mock_admin):
         state.config['poll_started'] = False
         self.assertIsNone(handlers.create_poll(self.Message))
         
@@ -93,9 +89,10 @@ class TestHandlers(unittest.TestCase):
             music_poll += f'{idx + 1}. {song["author"]} | {song["title"]}\n'
         self.assertEqual(capture,music_poll)
 
+    @patch('bot_top_ranking.utils.bot.get_chat_administrators',side_effect=mocK_get_chat_administrators)
     @patch('bot_top_ranking.handlers.bot.pin_chat_message', side_effect=mock_pin_chat_message)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
-    def test_create_poll_raise(self,mock_message, smth):
+    def test_create_poll_raise(self,mock_message, smth, mock_admin):
         state.config['poll_started'] = True
         self.assertIsNone(handlers.create_poll(self.Message))
 
@@ -126,9 +123,10 @@ class TestHandlers(unittest.TestCase):
                     music_poll += f'{idx + 1}. {song["author"]} | {song["title"]} | {song["mark"]} Votes\n'
                 self.assertEqual(capture,music_poll)
 
+    @patch('bot_top_ranking.utils.bot.get_chat_administrators',side_effect=mocK_get_chat_administrators)
     @patch('bot_top_ranking.handlers.bot.pin_chat_message', side_effect=mock_pin_chat_message)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
-    def test_get_songs_top_list_wrong(self,mock_message,mockk_pin):
+    def test_get_songs_top_list_wrong(self,mock_message,mockk_pin, mock_admin):
         params = [0,'qwerty','']
         state.config['poll_started'] = False
         
@@ -183,13 +181,12 @@ class TestHandlers(unittest.TestCase):
         expected_output = f'Number should be less than {state.config["count_music"]} and greater than 0'
         self.assertEqual(capture, expected_output)
 
+    @patch('bot_top_ranking.utils.bot.get_chat_administrators',side_effect=mocK_get_chat_administrators)
     @patch('bot_top_ranking.handlers.bot.pin_chat_message', side_effect=mock_pin_chat_message)
     @patch('bot_top_ranking.help_functions._download_music_link',side_effect=mock_download_music_link)
     @patch('bot_top_ranking.handlers.bot.send_audio', side_effect=mock_send_audio)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
-    def test_pop_element_from_top_notupload(self,mock_message, mock_audio, down_link, pin):
-        
-
+    def test_pop_element_from_top_notupload(self,mock_message, mock_audio, down_link, pin, mock_admin):
         state.config["songs"] = get_songs()
         params = [1, 5, 12]
         for param in params:
@@ -205,12 +202,12 @@ class TestHandlers(unittest.TestCase):
                 expected_output = top_list[param-1]['author'] + ' | ' + top_list[param-1]['title']
                 self.assertEqual(capture,expected_output)
 
-    @patch('bot_top_ranking.help_functions.upload_song', side_effect=mock_upload_song)
+    @patch('bot_top_ranking.utils.bot.get_chat_administrators',side_effect=mocK_get_chat_administrators)
+    @patch('bot_top_ranking.handlers.upload_song', side_effect=mock_upload_song)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
-    def test_pop_element_from_top_upload(self,mock_message, mock_upload):
+    def test_pop_element_from_top_upload(self,mock_message, mock_upload, mock_admin):
         state.config["songs"] = get_songs()
         state.config['upload_flag'] = True
-        
         params = [1, 5, 12]
         for param in params:
             with self.subTest():
@@ -225,11 +222,12 @@ class TestHandlers(unittest.TestCase):
                 expected_output = top_list[param-1]['author'] + ' | ' + top_list[param-1]['title']
                 self.assertEqual(capture,expected_output)
 
+    @patch('bot_top_ranking.utils.bot.get_chat_administrators',side_effect=mocK_get_chat_administrators)
     @patch('bot_top_ranking.handlers.bot.pin_chat_message', sidi_effect=mock_pin_chat_message)
     @patch('bot_top_ranking.help_functions._download_music_link',side_effect=mock_download_music_link)
     @patch('bot_top_ranking.handlers.bot.send_audio', side_effect=mock_send_audio)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
-    def test_pop_element_from_top_empty(self,mock_message, mock_audio, down_link, pin):
+    def test_pop_element_from_top_empty(self,mock_message, mock_audio, down_link, pin, mock_admin):
         
         state.config["songs"] = get_songs()
         state.config['poll_started'] = True
@@ -243,11 +241,12 @@ class TestHandlers(unittest.TestCase):
         expected_output = top_list[0]['author'] + ' | ' + top_list[0]['title']
         self.assertEqual(capture,expected_output)
 
+    @patch('bot_top_ranking.utils.bot.get_chat_administrators',side_effect=mocK_get_chat_administrators)
     @patch('bot_top_ranking.handlers.bot.pin_chat_message', side_effect=mock_pin_chat_message)
     @patch('bot_top_ranking.help_functions._download_music_link',side_effect=mock_download_music_link)
     @patch('bot_top_ranking.handlers.bot.send_audio', side_effect=mock_send_audio)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
-    def test_pop_element_from_top_unnumber(self,mock_message, mock_audio, down_link, pin):
+    def test_pop_element_from_top_unnumber(self,mock_message, mock_audio, down_link, pin, mock_admin):
         
         state.config["songs"] = get_songs()
         state.config['poll_started'] = True
@@ -263,11 +262,11 @@ class TestHandlers(unittest.TestCase):
 
 
 
-
+    @patch('bot_top_ranking.utils.bot.get_chat_administrators',side_effect=mocK_get_chat_administrators)
     @patch('bot_top_ranking.handlers.bot.unpin_chat_message',side_effect=mock_unpin_chat_message)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
     @patch('bot_top_ranking.handlers.state.__init__',side_effect=mock_state_init)
-    def test_finish_poll(self,mock_message, mock_state, mock_unpin):
+    def test_finish_poll(self,mock_message, mock_state, mock_unpin, mock_admin):
         
         state.config["poll_started"] = True
 
@@ -278,8 +277,9 @@ class TestHandlers(unittest.TestCase):
         expected_output = 'Poll was finished'
         self.assertEqual(capture,expected_output)
 
+    @patch('bot_top_ranking.utils.bot.get_chat_administrators',side_effect=mocK_get_chat_administrators)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
-    def test_change_upload_flag(self, mock_message):
+    def test_change_upload_flag(self, mock_message, mock_admin):
         state.config["songs"] = get_songs()
         state.config['poll_started'] = True
 
@@ -304,8 +304,9 @@ class TestHandlers(unittest.TestCase):
                     self.assertTrue(started_upload_flag == state.config['upload_flag'])
                     self.assertEqual(capture,expected_output)
     
+    @patch('bot_top_ranking.utils.bot.get_chat_administrators',side_effect=mocK_get_chat_administrators)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
-    def test_get_poll_status(self, mock_message):
+    def test_get_poll_status(self, mock_message, mock_admin):
         self.assertIsNone(handlers.get_poll_status(self.Message))
         capture = get_capture()
 
@@ -317,27 +318,26 @@ class TestHandlers(unittest.TestCase):
         )
         self.assertEqual(capture,expected_output)
 
-
+    @patch('bot_top_ranking.utils.bot.get_chat_administrators',side_effect=mocK_get_chat_administrators)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
-    def test_set_dj_by_user_id(self,mock_message):
-        user_tag = 'admin'
-        mentioned_message = message(user(username='admin'),self.Chat,f'/setDJ @{user_tag}')
+    def test_set_dj_by_user_id(self,mock_message, mock_admin):
+        state.config["users_for_promoting"] = []
+        user_tag = bot.get_me().username
+        mentioned_message = message(self.User,self.Chat,f'/setDJ @{user_tag}')
         self.assertIsNone(handlers.set_dj_by_user_id(mentioned_message))        
         self.assertEqual(state.config["users_for_promoting"][-1],user_tag)
         capture = get_capture()
         expected_output = f'@{user_tag} type /becomeDJ. It\'s privileges only for you ^_^'
         self.assertEqual(capture,expected_output)
 
+    @patch('bot_top_ranking.utils.bot.get_chat_administrators',side_effect=mocK_get_chat_administrators)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
-    def test_set_dj_by_user_id_incorrect(self, mock_message):
-        params = ['']
-        for param in params:
-            with self.subTest():
-                mentioned_message = message(self.User,self.Chat,f'/setDJ @{param}')
-                self.assertIsNone(handlers.set_dj_by_user_id(mentioned_message))
-                capture = get_capture()
-                expected_output = 'Incorrect input. Type /help to get information about commands'
-                self.assertEqual(capture,expected_output)
+    def test_set_dj_by_user_id_incorrect(self, mock_message, mock_admin):
+        mentioned_message = message(self.User,self.Chat,f'/setDJ @')
+        self.assertIsNone(handlers.set_dj_by_user_id(mentioned_message))
+        capture = get_capture()
+        expected_output = 'Incorrect input. Type /help to get information about commands'
+        self.assertEqual(capture,expected_output)
 
 
     @patch('bot_top_ranking.handlers.bot.set_chat_administrator_custom_title', side_effect=mock_set_chat_administrator_custom_title)
@@ -345,7 +345,7 @@ class TestHandlers(unittest.TestCase):
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
     def test_become_dj(self, mock_message,mock_promote,mock_title):
         
-        user_tag = 'nikefr7'
+        user_tag = bot.get_me().username
         state.config['users_for_promoting']=[user_tag]
 
         
@@ -359,20 +359,19 @@ class TestHandlers(unittest.TestCase):
     @patch('bot_top_ranking.handlers.bot.promote_chat_member', side_effect=mock_promote_chat_member)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
     def test_become_dj_cannot(self, mock_message,mock_promote,mock_title):
-        state.config['users_for_promoting']=['nikefr7']
+        state.config['users_for_promoting']=['ababababababab']
 
-        self.assertIsNone(handlers.become_dj(message(user(username='qwerty'),self.Chat)))
+        self.assertIsNone(handlers.become_dj(self.Message))
         capture = get_capture()
         expected_output = "You cannot use this command"
         self.assertEqual(capture,expected_output)
 
     @patch('bot_top_ranking.handlers.bot.set_chat_administrator_custom_title', side_effect=mock_set_chat_administrator_custom_title)
-    @patch('bot_top_ranking.handlers.bot.promote_chat_member', side_effect=mock_promote_chat_member)
+    @patch('bot_top_ranking.handlers.bot.promote_chat_member', side_effect=mock_promote_chat_member_raise)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
     def test_become_dj_raise(self, mock_message,mock_promote,mock_title):
-        state.config['users_for_promoting']=['nikefr7']
-
-        self.assertIsNone(handlers.become_dj(message(user(username='nikefr7',id=666),self.Chat)))
+        state.config['users_for_promoting']=[bot.get_me().username]
+        self.assertIsNone(handlers.become_dj(self.Message))
         capture = get_capture()
         expected_output = 'You are admin. Why do you try to do it??? (╮°-°)╮┳━━┳ ( ╯°□°)╯ ┻━━┻'
         self.assertEqual(capture,expected_output)

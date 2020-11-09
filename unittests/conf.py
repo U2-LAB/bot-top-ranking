@@ -3,19 +3,20 @@ import os
 
 from telebot import types
 from telebot.apihelper import ApiTelegramException
+from collections import namedtuple
+from bot_top_ranking.utils import bot
 
 
 def chat():
-    return types.Chat(id=-1001349185527, type='supergroup')
+    return types.Chat(id=11111, type='supergroup')
 
-def user(id=359862454,username='nikefr7'):
-    # 843622237 - Kavahi
-    return types.User(id=id, is_bot=False, first_name='Some User', username=username)
+def user():
+    return bot.get_me()
 
 def message(user, chat, text='/start'):
     params = {'text': text}
     return types.Message(
-        message_id=27891546, from_user=user, date=None, chat=chat, content_type='text', options=params, json_string=""
+        message_id=1, from_user=user, date=None, chat=chat, content_type='text', options=params, json_string=""
     )
 
 def call(user,data,chat,message):
@@ -65,12 +66,14 @@ def mock_unpin_chat_message(chat_id):
     pass
 
 def mock_promote_chat_member(id,user_id,can_delete_messages=True):
-    if user_id == 666:
-        result_json = {
-            "error_code" : 444,
-            "description" : 'descr'
-        }
-        raise ApiTelegramException('func','res',result_json)
+    pass
+
+def mock_promote_chat_member_raise(id,user_id,can_delete_messages=True):
+    result_json = {
+        "error_code" : 444,
+        "description" : 'descr'
+    }
+    raise ApiTelegramException('func','res',result_json)
 
 def mock_set_chat_administrator_custom_title(chat_id,user_id,name):
     pass
@@ -104,3 +107,10 @@ def get_songs():
         {'title': 'РАТАТАТАТА', 'author': 'MORGENSHTERN, Витя АК', 'link': 'https://zaycev.net/musicset/dl/5448561766eee1684e7af86a3b59cbcd/16877860.json', 'mark': 0, 'pos': 25, 'voted_users': []}
     ]
     return songs
+
+def mocK_get_chat_administrators(message_chat_id):
+    User = namedtuple('User', ['user'])
+    return [User(types.User(bot.get_me().id, None, 'Tester'))]
+
+def mock_get_chat_administrators_empty(message_chat_id):
+    return []
