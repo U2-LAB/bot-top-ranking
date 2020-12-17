@@ -286,25 +286,25 @@ class TestHandlers(unittest.TestCase):
         params = ['off', 'on', '', 123]
         for param in params:
             with self.subTest():
-                change_message = message(self.User,self.Chat,text=f'/settings_mp3 {param}'.strip())
+                change_message = message(self.User, self.Chat, text=f'/settings_mp3 {param}'.strip())
                 started_upload_flag = state.config['upload_flag']
                 self.assertIsNone(handlers.change_upload_flag(change_message))
                 capture = get_capture()
                 expected_output = f'uploading songs is <b>{"Enabled" if state.config["upload_flag"] else "Disabled"}</b>'
                 if param == 'off':
                     self.assertFalse(state.config['upload_flag'])
-                    self.assertEqual(capture,expected_output)
+                    self.assertEqual(capture, expected_output)
                 elif param == 'on':
                     self.assertTrue(state.config['upload_flag'])
-                    self.assertEqual(capture,expected_output)
+                    self.assertEqual(capture, expected_output)
                 elif param == '':
                     self.assertTrue(not started_upload_flag == state.config['upload_flag'])
-                    self.assertEqual(capture,expected_output)
+                    self.assertEqual(capture, expected_output)
                 else:
                     self.assertTrue(started_upload_flag == state.config['upload_flag'])
-                    self.assertEqual(capture,expected_output)
-    
-    @patch('bot_top_ranking.utils.bot.get_chat_administrators',side_effect=mocK_get_chat_administrators)
+                    self.assertEqual(capture, expected_output)
+
+    @patch('bot_top_ranking.utils.bot.get_chat_administrators', side_effect=mocK_get_chat_administrators)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
     def test_get_poll_status(self, mock_message, mock_admin):
         self.assertIsNone(handlers.get_poll_status(self.Message))
@@ -316,64 +316,60 @@ class TestHandlers(unittest.TestCase):
             f'Poll started: {state.config["poll_started"]}\n'
             f'Upload mp3: {"on" if state.config["upload_flag"] else "off"}'
         )
-        self.assertEqual(capture,expected_output)
+        self.assertEqual(capture, expected_output)
 
-    @patch('bot_top_ranking.utils.bot.get_chat_administrators',side_effect=mocK_get_chat_administrators)
+    @patch('bot_top_ranking.utils.bot.get_chat_administrators', side_effect=mocK_get_chat_administrators)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
-    def test_set_dj_by_user_id(self,mock_message, mock_admin):
+    def test_set_dj_by_user_id(self, mock_message, mock_admin):
         state.config["users_for_promoting"] = []
         user_tag = bot.get_me().username
-        mentioned_message = message(self.User,self.Chat,f'/setDJ @{user_tag}')
-        self.assertIsNone(handlers.set_dj_by_user_id(mentioned_message))        
-        self.assertEqual(state.config["users_for_promoting"][-1],user_tag)
+        mentioned_message = message(self.User, self.Chat, f'/setDJ @{user_tag}')
+        self.assertIsNone(handlers.set_dj_by_user_id(mentioned_message))
+        self.assertEqual(state.config["users_for_promoting"][-1], user_tag)
         capture = get_capture()
         expected_output = f'@{user_tag} type /becomeDJ. It\'s privileges only for you ^_^'
-        self.assertEqual(capture,expected_output)
+        self.assertEqual(capture, expected_output)
 
-    @patch('bot_top_ranking.utils.bot.get_chat_administrators',side_effect=mocK_get_chat_administrators)
+    @patch('bot_top_ranking.utils.bot.get_chat_administrators', side_effect=mocK_get_chat_administrators)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
     def test_set_dj_by_user_id_incorrect(self, mock_message, mock_admin):
-        mentioned_message = message(self.User,self.Chat,f'/setDJ @')
+        mentioned_message = message(self.User, self.Chat, r'/setDJ @')
         self.assertIsNone(handlers.set_dj_by_user_id(mentioned_message))
         capture = get_capture()
-        expected_output = 'Incorrect input. Type /help to get information about commands'
-        self.assertEqual(capture,expected_output)
-
+        expected_output = r'Incorrect input. Type /help to get information about commands'
+        self.assertEqual(capture, expected_output)
 
     @patch('bot_top_ranking.handlers.bot.set_chat_administrator_custom_title', side_effect=mock_set_chat_administrator_custom_title)
     @patch('bot_top_ranking.handlers.bot.promote_chat_member', side_effect=mock_promote_chat_member)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
-    def test_become_dj(self, mock_message,mock_promote,mock_title):
-        
-        user_tag = bot.get_me().username
-        state.config['users_for_promoting']=[user_tag]
+    def test_become_dj(self, mock_message, mock_promote, mock_title):
 
-        
+        user_tag = bot.get_me().username
+        state.config['users_for_promoting'] = [user_tag]
+
         self.assertIsNone(handlers.become_dj(self.Message))
         self.assertFalse(state.config['users_for_promoting'])
         capture = get_capture()
         expected_output = f'@{user_tag} You have been promoted to DJ. Congratulate 🏆🏆🏆'
-        self.assertEqual(capture,expected_output)
+        self.assertEqual(capture, expected_output)
 
     @patch('bot_top_ranking.handlers.bot.set_chat_administrator_custom_title', side_effect=mock_set_chat_administrator_custom_title)
     @patch('bot_top_ranking.handlers.bot.promote_chat_member', side_effect=mock_promote_chat_member)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
-    def test_become_dj_cannot(self, mock_message,mock_promote,mock_title):
-        state.config['users_for_promoting']=['ababababababab']
+    def test_become_dj_cannot(self, mock_message, mock_promote, mock_title):
+        state.config['users_for_promoting'] = ['ababababababab']
 
         self.assertIsNone(handlers.become_dj(self.Message))
         capture = get_capture()
         expected_output = "You cannot use this command"
-        self.assertEqual(capture,expected_output)
+        self.assertEqual(capture, expected_output)
 
     @patch('bot_top_ranking.handlers.bot.set_chat_administrator_custom_title', side_effect=mock_set_chat_administrator_custom_title)
     @patch('bot_top_ranking.handlers.bot.promote_chat_member', side_effect=mock_promote_chat_member_raise)
     @patch('bot_top_ranking.handlers.bot.send_message', side_effect=mock_send_message)
-    def test_become_dj_raise(self, mock_message,mock_promote,mock_title):
-        state.config['users_for_promoting']=[bot.get_me().username]
+    def test_become_dj_raise(self, mock_message, mock_promote, mock_title):
+        state.config['users_for_promoting'] = [bot.get_me().username]
         self.assertIsNone(handlers.become_dj(self.Message))
         capture = get_capture()
         expected_output = 'You are admin. Why do you try to do it??? (╮°-°)╮┳━━┳ ( ╯°□°)╯ ┻━━┻'
-        self.assertEqual(capture,expected_output)
-
-    
+        self.assertEqual(capture, expected_output)

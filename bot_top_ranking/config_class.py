@@ -3,6 +3,7 @@ import os
 
 from bot_top_ranking.marsh_schemas import StateSchema
 from bot_top_ranking.work_with_csv import get_music_csv, create_csv
+from bot_top_ranking.songs import Song
 
 
 class State:
@@ -21,12 +22,13 @@ class State:
         with open(self.path_to_config) as r_file:
             json_data = json.load(r_file)
             config = self.schema.load(json_data)
-        if not config["songs"]:
+        if Song.select().count() == 0:
             create_csv(self.filename, config["count_music"])
-            config["songs"] = self.get_songs()
-        config["songs"] = sorted(config["songs"], key=lambda song: song["title"])
-        for idx, _ in enumerate(config["songs"]):
-            config["songs"][idx]["pos"] = idx + 1  # positions of songs starts by 1
+            for song in self.get_songs():
+                Song.create(title=song.get('title'), link=song.get('link'), author=song.get('author'), voted_users=[])
+            
+            for idx in range(Song.select().count()):
+                Song.update(pos=idx + 1).where(Song.id_music == idx + 1).execute()
         return config
 
     def get_songs(self):

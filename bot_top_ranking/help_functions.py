@@ -19,7 +19,7 @@ def _download_music_link(music_link, name):
 
 
 def upload_song(song, bot, state):
-    song_name = f'{song["author"]} - {song["title"]}.mp3'
+    song_name = f'{song["author"]} - {song["title"]}.mp3'.replace('/', '|')
     _download_music_link(song["link"], song_name)
     audio = open(song_name, 'rb')
     bot.send_audio(state.config["chat_id"], audio)

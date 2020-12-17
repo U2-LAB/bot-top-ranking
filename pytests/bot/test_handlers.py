@@ -198,7 +198,7 @@ def test_get_poll_status(mock_message, capsys):
 @pytest.mark.work_with_dj
 def test_set_dj_by_user_id(mock_message, capsys):
     mock_message.text = "/setDJ @Admin"
-    expected_output = f'@Admin type /becomeDJ. It\'s privileges only for you ^_^'
+    expected_output = '@Admin type /becomeDJ. It\'s privileges only for you ^_^'
     handlers.set_dj_by_user_id(mock_message)
     assert len(state.config["users_for_promoting"]) > 0 and 'Admin' in state.config["users_for_promoting"]
     out, err = capsys.readouterr()
