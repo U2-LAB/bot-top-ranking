@@ -156,3 +156,4 @@ dmypy.json
 *.code-workspace
 
 # End of https://www.toptal.com/developers/gitignore/api/python,vscode
+test_unittest.py
