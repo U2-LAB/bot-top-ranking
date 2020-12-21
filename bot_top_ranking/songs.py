@@ -4,7 +4,13 @@ from playhouse.postgres_ext import PostgresqlExtDatabase, ArrayField
 from dotenv import load_dotenv
 
 load_dotenv()
-conn = PostgresqlExtDatabase(os.getenv("NAME_DBd"), user=os.getenv("USER_DB"), password=os.getenv("PASSWORD_DB"), host=os.getenv("HOST_DB"), port=os.getenv("PORT_DB"))
+conn = PostgresqlExtDatabase(
+    database=os.getenv("NAME_DB"), 
+    user=os.getenv("USER_DB"), 
+    password=os.getenv("PASSWORD_DB"), 
+    host=os.getenv("HOST_DB"), 
+    port=os.getenv("PORT_DB")
+)
 
 
 class BaseModel(Model):

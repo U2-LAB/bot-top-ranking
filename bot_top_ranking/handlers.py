@@ -4,7 +4,7 @@ from peewee import fn
 from telebot.apihelper import ApiTelegramException
 
 from bot_top_ranking.decorators import only_admins, started_pool
-from bot_top_ranking.help_functions import gen_markup, upload_song
+from bot_top_ranking.help_functions import gen_markup, upload_song, create_top
 from bot_top_ranking.utils import bot, state
 from bot_top_ranking.songs import Song
 
@@ -28,6 +28,7 @@ def get_help(message):
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
+    print(call.__dict__)
     if call.data == "help":
         get_help(call.message)
 
@@ -50,10 +51,8 @@ def create_poll(message):
 @bot.message_handler(commands=['top'])
 @started_pool
 def get_songs_top_list(message):
-    state.config["top_songs"] = []
-    top_list = Song.select().order_by(Song.mark.desc(), Song.pos)
-    for song in top_list:
-        state.config["top_songs"].append(song.__data__)
+    state.config["top_songs"].clear()
+    create_top()
     music_poll = ''
     try:
         top_number = int(re.search(r'^/top ([\d]*)$', message.text).group(1))
@@ -78,15 +77,23 @@ def vote_for_song(message):
         reply_message = f'Number should be less than {state.config["count_music"]} and greater than 0'
         bot.send_message(state.config["chat_id"], reply_message)
     else:
-        state.config["top_songs"] = []
+        state.config["top_songs"].clear()
         if message.from_user.id not in Song.get_by_id(idx).voted_users:
             song_item = Song.get_by_id(idx)
-            song_item.update(mark=song_item.mark + 1).where(Song.id_music == song_item.id_music).execute()
-            song_item.update(voted_users=fn.array_append(Song.voted_users, message.from_user.id)).where(Song.id_music == song_item.id_music).execute()
+            song_item.update(
+                mark=song_item.mark + 1
+                ).where(Song.id_music == song_item.id_music).execute()
+            song_item.update(
+                voted_users=fn.array_append(Song.voted_users, message.from_user.id)
+                ).where(Song.id_music == song_item.id_music).execute()
         else:
             song_item = Song.get_by_id(idx)
-            song_item.update(mark=song_item.mark - 1).where(Song.id_music == song_item.id_music).execute()
-            song_item.update(voted_users=fn.array_remove(Song.voted_users, message.from_user.id)).where(Song.id_music == song_item.id_music).execute()
+            song_item.update(
+                mark=song_item.mark - 1
+                ).where(Song.id_music == song_item.id_music).execute()
+            song_item.update(
+                voted_users=fn.array_remove(Song.voted_users, message.from_user.id)
+                ).where(Song.id_music == song_item.id_music).execute()
 
 
 @bot.message_handler(commands=['poptop'])
@@ -105,9 +112,7 @@ def pop_element_from_top(message):
         bot.send_message(state.config["chat_id"], reply_message)
     else:
         if not state.config["top_songs"]:
-            top_list = Song.select().order_by(Song.mark.desc(), Song.pos)
-            for song in top_list:
-                state.config["top_songs"].append(song.__data__)
+            create_top()
         song_item = state.config["top_songs"][idx]
         if state.config["upload_flag"]:
             upload_song(song_item, bot, state)
