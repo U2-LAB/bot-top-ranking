@@ -24,7 +24,7 @@ class Song(BaseModel):
     link = TextField(column_name='link')
     id_music = IntegerField(column_name="id_music", primary_key=True)
     author = TextField(column_name='author')
-    voted_users = ArrayField(IntegerField, column_name="voted_users")
+    voted_users = ArrayField(TextField, column_name="voted_users")
     mark = IntegerField(column_name="mark")
 
     class Meta:

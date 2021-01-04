@@ -25,7 +25,7 @@ class SongSchema(CamelCaseSchema):
     link = fields.Url(required=True)
     mark = fields.Int(required=True)
     pos = fields.Int(required=True)
-    voted_users = fields.List(fields.Int())
+    voted_users = fields.List(fields.Str())
 
 
 class StateSchema(CamelCaseSchema):

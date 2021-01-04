@@ -42,7 +42,7 @@ def create_poll(message):
         state.config["poll_started"] = True
         state.config["chat_id"] = message.chat.id
         music_poll = ''
-        for idx, song in enumerate(Song.select().execute()):
+        for idx, song in enumerate(Song.select().order_by(Song.author).execute()):
             music_poll += f'{idx + 1}. {song.author} | {song.title}\n'
         poll = bot.send_message(state.config["chat_id"], music_poll, reply_markup=gen_markup())
         bot.pin_chat_message(state.config["chat_id"], poll.message_id, disable_notification=True)
@@ -78,13 +78,13 @@ def vote_for_song(message):
         bot.send_message(state.config["chat_id"], reply_message)
     else:
         state.config["top_songs"].clear()
-        if message.from_user.id not in Song.get_by_id(idx).voted_users:
+        if str(message.from_user.id) not in Song.get_by_id(idx).voted_users:
             song_item = Song.get_by_id(idx)
             song_item.update(
                 mark=song_item.mark + 1
                 ).where(Song.id_music == song_item.id_music).execute()
             song_item.update(
-                voted_users=fn.array_append(Song.voted_users, message.from_user.id)
+                voted_users=fn.array_append(Song.voted_users, str(message.from_user.id))
                 ).where(Song.id_music == song_item.id_music).execute()
         else:
             song_item = Song.get_by_id(idx)
@@ -92,7 +92,7 @@ def vote_for_song(message):
                 mark=song_item.mark - 1
                 ).where(Song.id_music == song_item.id_music).execute()
             song_item.update(
-                voted_users=fn.array_remove(Song.voted_users, message.from_user.id)
+                voted_users=fn.array_remove(Song.voted_users, str(message.from_user.id))
                 ).where(Song.id_music == song_item.id_music).execute()
 
 
