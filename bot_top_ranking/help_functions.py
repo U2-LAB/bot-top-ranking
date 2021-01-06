@@ -1,11 +1,14 @@
 import os
 
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from bot_top_ranking.songs import Song
+from bot_top_ranking.utils import state
+from playhouse.shortcuts import model_to_dict
 
-
-def create_top(songs):
-    top_list = sorted(songs, key=lambda song: song["mark"], reverse=True)
-    return top_list
+def create_top():
+    top_list = Song.select().order_by(Song.mark.desc(), Song.pos)
+    for song in top_list:
+        state.config["top_songs"].append(model_to_dict(song))
 
 
 def _download_music_link(music_link, name):
@@ -19,7 +22,7 @@ def _download_music_link(music_link, name):
 
 
 def upload_song(song, bot, state):
-    song_name = f'{song["author"]} - {song["title"]}.mp3'
+    song_name = f'{song["author"]} - {song["title"]}.mp3'.replace('/', '|')
     _download_music_link(song["link"], song_name)
     audio = open(song_name, 'rb')
     bot.send_audio(state.config["chat_id"], audio)

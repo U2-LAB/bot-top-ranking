@@ -4,6 +4,7 @@ from bot_top_ranking import work_with_csv
 import pytest
 import csv
 
+
 @pytest.mark.smoke
 def test_get_music_csv(set_temp_folder):
     test_song = {

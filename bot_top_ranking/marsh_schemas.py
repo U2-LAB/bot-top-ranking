@@ -19,12 +19,13 @@ class CamelCaseSchema(Schema):
 
 
 class SongSchema(CamelCaseSchema):
+    id_music = fields.Int(required=True)
     title = fields.Raw(required=True)
     author = fields.Raw(required=True)
     link = fields.Url(required=True)
     mark = fields.Int(required=True)
     pos = fields.Int(required=True)
-    voted_users = fields.List(fields.Int())
+    voted_users = fields.List(fields.Str())
 
 
 class StateSchema(CamelCaseSchema):
@@ -34,4 +35,4 @@ class StateSchema(CamelCaseSchema):
     poll_started = fields.Bool(required=True)
     users_for_promoting = fields.List(fields.Str())
     upload_flag = fields.Bool(required=True)
-    songs = fields.List(fields.Nested(SongSchema))
+    top_songs = fields.List(fields.Nested(SongSchema))

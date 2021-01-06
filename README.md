@@ -13,6 +13,13 @@ $ touch .env
 ```sh
 $ python3 -m bot-top-ranking
 ```
+
+### Docker run
+In main directory, where Dockerfile located, run command
+```sh
+docker build -t bot .
+docker run -d --rm --name bot --net host bot:latest
+``` 
 ## List of commands
 
 ### Commands for all users
@@ -39,6 +46,11 @@ DEFAULT_JSON = "${CONFIG_PATH}default_config.json"
 SAVED_JSON = "${CONFIG_PATH}saved_config.json"
 MUSIC_FILE = "music.csv"
 CHAT_ID = 123456789
+USER_DB = "postgres"
+PASSWORD_DB = "postgres"
+HOST_DB = "localhost"
+PORT_DB = 5432
+NAME_DB = "bot-telegram"
 ```
 __BOT_TOKEN__  - Your token for using bot in telegram. 
 :warning:`Don't add your token in repository`
@@ -52,6 +64,16 @@ __SAVED_JSON__ - Name of json file, that will be created and then bot will loade
 __CHAT_ID__ - Parameter needed for testing your bot
 
 __MUSIC_FILE__ - Name of the *.csv file that contains song in format belong
+
+__USER_DB__ - Login for connect to the database (PostgreSQL)
+
+__PASSWORD_DB__ - Password need for connect to the database (PostgreSQL)
+
+__HOST_DB__ - IP_Address to the PostgreSQL database that stores information about songs
+
+__PORT_DB__ - Port to the PostgreSQL database
+
+__NAME_DB__ - Name of the PostgreSQL database
 
 | title | author | link |
 | :---: | :---: | :---: |

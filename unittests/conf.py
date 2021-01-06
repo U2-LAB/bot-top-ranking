@@ -1,4 +1,3 @@
-import json
 import os
 
 from telebot import types
@@ -12,6 +11,7 @@ def chat():
 
 def user():
     return bot.get_me()
+
 
 def message(user, chat, text='/start'):
     params = {'text': text}
